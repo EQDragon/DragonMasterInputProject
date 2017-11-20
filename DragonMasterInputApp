@@ -1,9 +1,0 @@
-import DragonMasterSerialDevice
-import DragonDeviceManager
-
-for draxElement in DragonMasterSerialDevice.get_all_drax_comports():
-    draxSerial = DragonMasterSerialDevice.Draxboard(draxElement.device)
-
-while raw_input() != 'exit':
-    pass
-

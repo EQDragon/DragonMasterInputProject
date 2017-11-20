@@ -96,11 +96,11 @@ def set_string_length(string1, lengthOfString = 60, spacingChar = ' '):
     remainingLength = lengthOfString - len(string1)
     newStringToReturn = ''
     if remainingLength > 0:
-        newStringToReturn = [spacingChar] * int(remainingLength)
+        newStringToReturn = spacingChar * int(remainingLength)
     newStringToReturn = newStringToReturn + string1
     remainingLength = lengthOfString - len(newStringToReturn)
     if remainingLength > 0:
-        newStringToReturn += [spacingChar] * remainingLength
+        newStringToReturn += spacingChar * remainingLength
 
     return newStringToReturn
 
@@ -111,10 +111,10 @@ accurately sized string.
 """
 def set_string_length_multiple(string1, string2, lengthOfString = 60, spacingChar = ' '):
     remainingLength = lengthOfString - len(string1) - len(string2)
-    newStringToReturn = ''
+    
     if remainingLength > 0:
-        return string1 + ([spacingChar] * remainingLength) + string2
+        return string1 + (spacingChar * remainingLength) + string2
     else:
-        return stirng1 + string2
+        return string1 + string2
 
 ###############################################################

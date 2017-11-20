@@ -57,7 +57,7 @@ def write_serial_device_wait_multiple_read(dragonMasterSerialDevice, dataToWrite
 
 
     except:
-        print "There was an error writing to " + dragonMasterSerialDevice.to_string()
+        print ("There was an error writing to " + dragonMasterSerialDevice.to_string())
         dragonMasterSerialDevice.blockReadEvent = False
         return readList
 
@@ -84,7 +84,7 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
         serialDevice.write(dataToWrite)
 
     except:
-        print "There was an error writing to " + dragonMasterSerialDevice.to_string()
+        print ("There was an error writing to " + dragonMasterSerialDevice.to_string())
         dragonMasterSerialDevice.blockReadEvent = False
         return
 
@@ -94,7 +94,7 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
             dragonMasterSerialDevice.blockReadEvent = False
             return read_serial_device(dragonMasterSerialDevice)
         sleep(.001)
-    print dragonMasterSerialDevice.to_string() + " Timed Out"
+    print (dragonMasterSerialDevice.to_string() + " Timed Out")
 
 
 """
@@ -109,7 +109,7 @@ def write_serial_device(serialDevice, dataToWrite):
         serialDevice.write(dataToWrite)
 
     except:
-        print 'There was an error writing to the device ' + serialDevice.port
+        print ('There was an error writing to the device ' + serialDevice.port)
 
 
 
@@ -123,7 +123,7 @@ def read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds =
         readLine = serialDevice.read(size=serialDevice.in_waiting)
         return readLine
     except:
-        print 'There was an error reading ' + serialDevice.port
+        print ('There was an error reading ' + serialDevice.port)
         return None
 
 
@@ -179,18 +179,18 @@ def print_all_comport_info():
     allPorts = serial.tools.list_ports.comports()
 
     for element in allPorts:
-        print element.serial_number
-        print element.location
-        print element.description
-        print element.device
-        print element.hwid
-        print element.interface
-        print element.serial_number
-        print element.manufacturer
-        print element.name
-        print element.pid
-        print element.vid
-        print "---------------------------------------------------"
+        print (element.serial_number)
+        print (element.location)
+        print (element.description)
+        print (element.device)
+        print (element.hwid)
+        print (element.interface)
+        print (element.serial_number)
+        print (element.manufacturer)
+        print (element.name)
+        print (element.pid)
+        print (element.vid)
+        print ("---------------------------------------------------")
 
 
 ##############################SERIAL CLASSES###################################
@@ -265,7 +265,7 @@ class Draxboard(SerialDevice):
         for i in range(int(len(readLine) / readBlockSize)):
             tempLine = readLine[i*readBlockSize:((i+1)*readBlockSize)]
             if (tempLine[0].encode('hex') == 'fa'):
-                print tempLine[3].encode('hex')
+                print (tempLine[3].encode('hex'))
 
 
 
@@ -277,7 +277,7 @@ class Draxboard(SerialDevice):
 
     def start_device(self):
         SerialDevice.start_device(self)
-        print write_serial_device_wait_for_read(self, self.REQUEST_STATUS)
+        print (write_serial_device_wait_for_read(self, self.REQUEST_STATUS))
 
 
 
