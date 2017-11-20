@@ -52,6 +52,10 @@ class DragonMasterDeviceManager:
         if not self.deviceDictionary.has_key(playerStationParentDeviceKey):
             return
         playerStation = self.deviceDictionary[playerStationParentDeviceKey]
+
+        drax = playerStation.draxboardDevice
+        dbv = playerStation.dbvDevice
+        joy = playerStation.joystickDevice
         pass
 
     ########################################################################
@@ -63,12 +67,18 @@ organizing all the devices to each player station
 """
 class DragonMasterDevice:
 
-    def __init__(self, deviceName):
-        self.deviceName = deviceName
+    def __init__(self):
         self.parentPath = self.get_parent_device_path()
 
     def get_parent_device_path(self):
         pass
+
+
+class JoystickDevice(DragonMasterDevice):
+
+    def __init__(self):
+        DragonMasterDevice.__init__(self)
+        
 
 
 """
@@ -111,7 +121,7 @@ accurately sized string.
 """
 def set_string_length_multiple(string1, string2, lengthOfString = 60, spacingChar = ' '):
     remainingLength = lengthOfString - len(string1) - len(string2)
-    
+
     if remainingLength > 0:
         return string1 + (spacingChar * remainingLength) + string2
     else:
