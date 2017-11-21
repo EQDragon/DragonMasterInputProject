@@ -28,6 +28,7 @@ class DragonMasterDeviceManager:
     def add_device(self, dragonMasterDevice):
         self.deviceList.append(dragonMasterDevice)
         dragonMasterDevice.start_device()
+        print dragonMasterDevice.to_string() + " has been added!"
 
     """
     Use this method to remove currently connected devices. Typically you may want to remove
