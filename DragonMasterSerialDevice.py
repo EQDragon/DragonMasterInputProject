@@ -195,6 +195,7 @@ def print_all_comport_info():
 
 
 ############################## SERIAL CLASSES ###################################
+#==================================================================================================================================================
 """
 Generic class for all serial devices. Creates an instance and opens a serial port for the proveided
 comport
@@ -237,7 +238,7 @@ class SerialDevice:
         except:
             return False
 
-
+#=====================================================================================================================================================
 """
 A serial device class that handles all functionality with the Drax board
 
@@ -299,7 +300,7 @@ class Draxboard(SerialDevice):
         print (write_serial_device_wait_for_read(self, self.REQUEST_STATUS))
 
 
-
+#===============================================================================================================================================
 class DBV400(SerialDevice):
 
     STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
@@ -311,10 +312,15 @@ class DBV400(SerialDevice):
     IDLE_REQUEST = bytearray([0x12, 0x08, 0x00, 0x10, 0x01, 0x00, 0x13, 0x10])
     IDLE_ACK = bytearray([0x12, 0x08, 0x00, 0x10, 0x01, 0x00, 0x13, 0x10])
 
+    #STATES OF DBV
+    IDLE_STATE = "IDLE"
+    NOT_INIT_STATE = "NOT INIT"
+
     UID = 0x42
-    STATE = 'NOT INIT'
+    
 
     def __init__(self, comport):
+        self.STATE = self.NOT_INIT_STATE
         SerialDevice.__init__(self, comport, bauderate=9600)
 
     def on_data_received_event(self):
@@ -322,6 +328,31 @@ class DBV400(SerialDevice):
 
     def start_device(self):
         pass
+
+    ######################DBV Commands#############################
+    def reset_dbv(self):
+        readLineList = write_serial_device_wait_multiple_read(self, self.REQUEST_STATUS, maxMillisecondsToWait = 400, desiredReadCount = 2)
+
+        dbvInfoLine = readLineList[1]
+        if dbvInfoLine != None and len(dbvInfoLine) > 5:
+            self.INHIBIT_ACK[5] = dbvInfoLine[5]
+        try:
+            self.serialDevice.flushInput()
+            self.serialDevice.flushOutput()
+        except:
+            print "There was an error flushing the serial device of DBV400(" + self.comport + ")"
+
+        if (self.STATE == self.IDLE_STATE):
+            self.idle_dbv()
+        STATE = self.get_state()
+        return
+
+    def idle_dbv(self):
+        return
+
+
+
+    ###############################################################
 
     def set_uid(self):
         self.RESET_REQUEST[4] = self.UID
