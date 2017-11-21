@@ -1,6 +1,9 @@
 import threading
 import DragonMasterSerialDevice
-
+import inputs
+from time import sleep
+import pygame
+import syslog
 
 
 
@@ -24,6 +27,11 @@ class DragonMasterDeviceManager:
 
 
     #############Contains Methods############################################
+
+    """
+    Use this method to check that the Draxboard Device that is being checked does not already exist in
+    the manager. Useful to ensure that we do not add duplicate devices
+    """
     def manager_contains_drax_device(self, draxDevice):
         if draxDevice is not DragonMasterSerialDevice.Draxboard:
             return
@@ -38,6 +46,10 @@ class DragonMasterDeviceManager:
 
         return
 
+    """
+    Use this method to make sure that the device manager does not already contain an instance of this dbv device.
+    Useful to ensure that do not add duplicate DBV devices before initializing a new device
+    """
     def manager_contains_dbv_device(self, dbvDevice):
 
         return
@@ -94,6 +106,29 @@ class PlayerStation:
         self.parentDevicePathKey = parentDevicePathKey
         return
 
+
+
+###############Device Search Methods###########################
+def get_all_joystick_devices():
+
+
+    for i in range (pygame.joystick.get_count()):
+        joystick = pygame.joystick.Joystick(i)
+        joystick.init()
+        while 1:
+            for event in pygame.event.get():
+                print event
+                pass
+            #print "x: " + str(round(joystick.get_axis(0), 2)) + " y: {} " + str(round(joystick.get_axis(1), 2))
+
+
+            sleep(.01)
+
+
+
+
+    return
+##############################################################
 
 
 ###################Debug String Methods########################

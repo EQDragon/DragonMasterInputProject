@@ -1,11 +1,14 @@
 import DragonMasterSerialDevice
 import DragonDeviceManager
+import pygame
+import pyudev
 
-for draxElement in DragonMasterSerialDevice.get_all_drax_comports():
-    draxSerial = DragonMasterSerialDevice.Draxboard(draxElement.device)
+context = pyudev.Context
 
-print (DragonDeviceManager.set_string_length('Test', lengthOfString=60, spacingChar='-'))
-print (DragonDeviceManager.set_string_length_multiple('Hello', 'Goodbye', lengthOfString=60, spacingChar='='))
+#It is important to initialize pygame before we use it
+pygame.init()
+pygame.joystick.init()
+
 
 
 
