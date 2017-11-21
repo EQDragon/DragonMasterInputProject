@@ -16,6 +16,8 @@ class DragonMasterDeviceManager:
         self.deviceList = []
         self.deviceDictionary = {}
 
+        self.poll_search_devices()
+
 
 
 
@@ -24,10 +26,8 @@ class DragonMasterDeviceManager:
     dragon master devices
     """
     def add_device(self, dragonMasterDevice):
-        if not self.deviceDictionary.has_key(dragonMasterDevice.devicePath):
-
-            pass
         self.deviceList.append(dragonMasterDevice)
+        dragonMasterDevice.start_device()
 
     """
     Use this method to remove currently connected devices. Typically you may want to remove
@@ -47,7 +47,11 @@ class DragonMasterDeviceManager:
         draxElementList = DragonMasterSerialDevice.get_all_drax_comports()
         for element in draxElementList:
             if element != None and element.port != None:
-                pass
+
+                if not self.manager_contains_drax_device(element.port):
+                    add_device(DragonMasterSerialDevice.Draxboard(element.port))
+
+
         return
 
     """
