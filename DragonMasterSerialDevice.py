@@ -343,6 +343,7 @@ class DBV400(SerialDevice):
         SerialDevice.__init__(self, comport, bauderate=9600)
 
     def on_data_received_event(self):
+        self.start_dbv()
         pass
 
     def start_device(self):
