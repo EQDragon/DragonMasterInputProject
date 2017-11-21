@@ -366,7 +366,7 @@ class DBV400(SerialDevice):
 
         if (self.STATE == self.IDLE_STATE):
             self.idle_dbv()
-        STATE = self.get_state()
+        self.STATE = self.get_state()
         return
 
     """
@@ -383,7 +383,7 @@ class DBV400(SerialDevice):
         write_serial_device(self, self.IDLE_ACK)
         flush_serial_device(self)
 
-        STATE = self.get_state()
+        self.STATE = self.get_state()
         return
 
     """
@@ -398,10 +398,38 @@ class DBV400(SerialDevice):
         write_serial_device(self, self.INHIBIT_ACK)
         flush_serial_device(self)
 
-        STATE = self.get_state()
+        self.STATE = self.get_state()
         return
 
     def start_dbv(self):
+
+        flush_serial_device(self)
+        self.STATE = self.get_state()
+        flush_serial_device(self)
+
+        if self.STATE == self.UNSUPPORTED_STATE:
+            self.set_uid()
+            self.STATE = self.get_state()
+
+        while self.STATE == self.POWER_UP_NACK_STATE:
+            flush_serial_device(self)
+            readLine = bytearray(read_serial_device(self, delayBeforeReadInMilliseconds = 500))
+            self.POWER_ACK[5] = readLine[5]
+            flush_serial_device(self)
+            write_serial_device(self, self.POWER_ACK)
+            STATE = self.get_state()
+
+        if self.STATE == self.POWER_UP_STATE:
+            self.set_uid()
+            write_serial_device(self, self.SET_UID)
+            flush_serial_device(self)
+            self.reset_dbv()
+
+        if self.STATE == self.INHIBIT_STATE:
+            self.idle_dbv()
+
+        
+
         return
 
 
