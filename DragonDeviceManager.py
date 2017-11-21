@@ -46,10 +46,10 @@ class DragonMasterDeviceManager:
         #Get All Drax Devices
         draxElementList = DragonMasterSerialDevice.get_all_drax_comports()
         for element in draxElementList:
-            if element != None and element.port != None:
+            if element != None and element.device != None:
 
-                if not self.manager_contains_drax_device(element.port):
-                    add_device(DragonMasterSerialDevice.Draxboard(element.port))
+                if not self.manager_contains_drax_device(element.device):
+                    self.add_device(DragonMasterSerialDevice.Draxboard(element.device))
 
 
         return
