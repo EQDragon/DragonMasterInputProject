@@ -315,7 +315,7 @@ class Draxboard(SerialDevice):
 
 #===============================================================================================================================================
 class DBV400(SerialDevice):
-
+    #COMMANDS
     STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
     POWER_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x00, 0x81, 0x00, 0x00, 0x06])
     SET_UID = bytearray([0x12, 0x09, 0x00, 0x10, 0x00, 0x20, 0x01, 0x00, 0x01])
@@ -324,6 +324,11 @@ class DBV400(SerialDevice):
     INHIBIT_REQUEST = bytearray([0x12, 0x08, 0x00, 0x10, 0x01, 0x00, 0x12, 0x00])
     IDLE_REQUEST = bytearray([0x12, 0x08, 0x00, 0x10, 0x01, 0x00, 0x13, 0x10])
     IDLE_ACK = bytearray([0x12, 0x08, 0x00, 0x10, 0x01, 0x00, 0x13, 0x10])
+    ESCROW_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x01, 0x85, 0x02, 0x11, 0x06])
+    BILL_REJECT = bytearray([0x12, 0x09, 0x00, 0x10, 0x02, 0x80, 0x04, 0x11, 0x06])
+    ERROR_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x00, 0x80, 0x01, 0x12, 0x06])
+    STACK_INHIBIT = bytearray([0x12, 0x08, 0x00, 0x10, 0x02, 0x00, 0x14, 0x10])
+    VEND_VALID_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x02, 0x86, 0x03, 0x11, 0x06])
 
     #STATES OF DBV
     IDLE_STATE = "IDLE"
@@ -333,16 +338,24 @@ class DBV400(SerialDevice):
     POWER_UP_STATE = "POWER UP"
     POWER_UP_NACK_STATE = "POWER UP NACK"
 
-
+    #UID (ARBITRARY)
     UID = 0x42
     
-
     def __init__(self, comport):
         self.STATE = self.NOT_INIT_STATE
         SerialDevice.__init__(self, comport, bauderate=9600)
 
     def on_data_received_event(self):
-        self.start_dbv()
+        read = read_serial_device(self)
+        print('PR',+read.encode('hex')
+    ######################Start If Statements#############################
+        if len(read) >= 11:
+            if(read[8].encode('hex') == '0x55' and read[9].encode('hex') == '0x53' and read.encode('hex') == '0x44')"
+                denomination = (int(read[11])
+                write_serial_device(self,self.ESCROW_ACK)
+                read = write_serial_device_wait_multiple_read(self,self.STACK_INHIBIT, maxMillisecondsToWait = 500) 
+                for x in range(0,11000):
+                    
         pass
 
     def start_device(self):
@@ -452,20 +465,20 @@ class DBV400(SerialDevice):
     def get_state(self, inputBytes):
         currentState = None
         if (len(inputBytes) >= 7 and inputBytes[8].encode('hex') == 'e4' and len(inputBytes) > 8):
-            currentState = 'POWER UP NACK'
+            currentState = POWER_UP_NACK_STATE
         elif (inputBytes[1].encode('hex') == '0a'):
-            currentState = 'POWER UP NACK'
+            currentState = POWER_UP_NACK_STATE
         elif (len(inputBytes) > 13 and inputBytes[11].encode('hex') == '00' and inputBytes[12].encode(
                 'hex') == '01' and inputBytes[13].encode('hex') == '00'):
-            currentState = 'POWER UP'
+            currentState = POWER_UP_STATE
         elif (len(inputBytes) >= 8 and inputBytes[8].encode('hex') == 'e2'):
-            currentState = 'UNSUPPORTED'
+            currentState = UNSUPPORTED_STATE
         elif (len(inputBytes) >= 12 and inputBytes[10].encode('hex') == '00' and inputBytes[11].encode(
                 'hex') == '01' and inputBytes[12].encode('hex') == '01'):
-            currentState = 'INHIBIT'
+            currentState = INHIBIT_STATE
         elif (len(inputBytes) >= 12 and inputBytes[10].encode('hex') == '01' and inputBytes[11].encode(
                 'hex') == '11' and inputBytes[12].encode('hex') == '11'):
-            currentState = 'IDLE'
+            currentState = IDLE_STATE
         print(currentState)
         return currentState
 
