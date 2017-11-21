@@ -311,6 +311,9 @@ class DBV400(SerialDevice):
     IDLE_REQUEST = bytearray([0x12, 0x08, 0x00, 0x10, 0x01, 0x00, 0x13, 0x10])
     IDLE_ACK = bytearray([0x12, 0x08, 0x00, 0x10, 0x01, 0x00, 0x13, 0x10])
 
+    UID = 0x42
+    STATE = 'NOT INIT'
+
     def __init__(self, comport):
         SerialDevice.__init__(self, comport, bauderate=9600)
 
@@ -319,6 +322,18 @@ class DBV400(SerialDevice):
 
     def start_device(self):
         pass
+
+    def set_uid(self):
+        self.RESET_REQUEST[4] = self.UID
+        self.INHIBIT_ACK[4] = self.UID
+        self.INHIBIT_REQUEST[4] = self.UID
+        self.IDLE_REQUEST[4] = self.UID
+        self.IDLE_ACK[4] = self.UID
+        self.SET_UID[8] = self.UID
+        self.STATUS_REQUEST[4] = self.UID
+        self.STATUS_REQUEST[3] = 0x10
+
+
 
     def get_state(self, inputBytes):
         currentState = None

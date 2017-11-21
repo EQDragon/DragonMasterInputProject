@@ -16,16 +16,33 @@ class DragonMasterDeviceManager:
         self.deviceList = []
         self.deviceDictionary = {}
 
+
+    """
+    Use this method to add a new device to the list of all connected 
+    dragon master devices
+    """
     def add_device(self, dragonMasterDevice):
         if not self.deviceDictionary.has_key(dragonMasterDevice.devicePath):
 
             pass
         self.deviceList.append(dragonMasterDevice)
 
+    """
+    Use this method to remove currently connected devices. Typically you may want to remove
+    malfunctioned devices so that they do not cause problems when polling
+    """
     def remove_device(self, dragonMasterDevice):
         if not self.deviceDictionary.has_key(dragonMasterDevice.devicePath):
 
             pass
+
+    def poll_search_devices(self):
+        #Get All Drax Devices
+        draxElementList = DragonMasterSerialDevice.get_all_drax_comports()
+        for element in draxElementList:
+            if element != None and element.port != None:
+                pass
+
 
 
     #############Contains Methods############################################
