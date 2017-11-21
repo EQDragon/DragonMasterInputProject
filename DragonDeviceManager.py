@@ -33,22 +33,21 @@ class DragonMasterDeviceManager:
     """
     Use this method to check that the Draxboard Device that is being checked does not already exist in
     the manager. Useful to ensure that we do not add duplicate devices
+    The parameter that should be passed in should be a string of the Comport for the draxboard
 
     Note: Please be sure that the type of device that is being compared is
     """
-    def manager_contains_drax_device(self, draxDevice):
-        if draxDevice == None or draxDevice is not DragonMasterSerialDevice.Draxboard:
+    def manager_contains_drax_device(self, draxDeviceComport):
+        if draxDeviceComport == None:
             return False
 
 
         for playerStation in self.deviceDictionary.items():
             if playerStation != None and playerStation.draxboardDevice != None:
+                if playerStation.draxboardDevice.comport == draxDeviceComport:
+                    return True
 
-                pass
-
-            pass
-
-        return
+        return False
 
     """
     Use this method to make sure that the device manager does not already contain an instance of this dbv device.
