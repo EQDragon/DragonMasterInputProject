@@ -333,7 +333,7 @@ class DBV400(SerialDevice):
     def reset_dbv(self):
         readLineList = write_serial_device_wait_multiple_read(self, self.REQUEST_STATUS, maxMillisecondsToWait = 400, desiredReadCount = 2)
 
-        dbvInfoLine = readLineList[1]
+        dbvInfoLine = bytearray(readLineList[1])#changed to byte array. Not sure if needed
         if dbvInfoLine != None and len(dbvInfoLine) > 5:
             self.INHIBIT_ACK[5] = dbvInfoLine[5]
         try:
@@ -348,6 +348,17 @@ class DBV400(SerialDevice):
         return
 
     def idle_dbv(self):
+        readLineList = write_serial_device_wait_multiple_read(self, self.IDLE_REQUEST, maxMillisecondsToWait = 10, desiredReadCount = 2)
+        idleInfo = bytearray(readLineList[1])
+
+        self.IDLE_ACK[5] = idleInfo[5]
+        self.serialDevice.flushInput()
+        self.serialDevice.flushOutput()
+        write_serial_device(self, self.IDLE_ACK)
+        self.serialDevice.flushInput()
+        self.serialDevice.flushOutput()
+
+        STATE = self.get_state()
         return
 
 
