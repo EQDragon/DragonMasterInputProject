@@ -33,10 +33,12 @@ class DragonMasterDeviceManager:
     """
     Use this method to check that the Draxboard Device that is being checked does not already exist in
     the manager. Useful to ensure that we do not add duplicate devices
+
+    Note: Please be sure that the type of device that is being compared is
     """
     def manager_contains_drax_device(self, draxDevice):
-        if draxDevice is not DragonMasterSerialDevice.Draxboard:
-            return
+        if draxDevice == None or draxDevice is not DragonMasterSerialDevice.Draxboard:
+            return False
 
 
         for playerStation in self.deviceDictionary.items():

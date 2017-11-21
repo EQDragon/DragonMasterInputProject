@@ -194,7 +194,7 @@ def print_all_comport_info():
         print ("---------------------------------------------------")
 
 
-##############################SERIAL CLASSES###################################
+############################## SERIAL CLASSES ###################################
 """
 Generic class for all serial devices. Creates an instance and opens a serial port for the proveided
 comport
@@ -206,9 +206,8 @@ class SerialDevice:
         self.blockReadEvent = False
         self.deviceFailedStart = False
         self.comport = comport
-        self.serialDevice = open_serial_device(comport=self.comport, baudrate=bauderate, readTimeout=3, writeTimeout=5)
-        if (self.serialDevice == None):
-            self.deviceFailedStart = True
+        self.serialDevice = None
+        
 
 
     def on_data_received_event(self):
@@ -218,11 +217,16 @@ class SerialDevice:
     Default start_device begins the polling for any read events that the serial device may trigger
     """
     def start_device(self):
+        self.serialDevice = open_serial_device(comport=self.comport, baudrate=bauderate, readTimeout=3, writeTimeout=5)
+        if (self.serialDevice == None):
+            self.deviceFailedStart = True
+
         readPollingThread = threading.Thread(target=poll_serial_thread, args=(self,))
         readPollingThread.daemon = False
         readPollingThread.start()
         
 
+    
     def to_string(self):
         return "SerialDevice (" + self.comport + ")"
 
@@ -233,6 +237,11 @@ class SerialDevice:
             return False
 
 
+"""
+A serial device class that handles all functionality with the Drax board
+
+This class should interpret events
+"""
 class Draxboard(SerialDevice):
     #Contant write bytes. Don't change these variables. They are used to write to the draxboard
     REQUEST_STATUS = bytearray([0x01, 0x00, 0x01, 0x02])
@@ -245,10 +254,6 @@ class Draxboard(SerialDevice):
 
     def __init__(self, comport):
         SerialDevice.__init__(self, comport, bauderate=115200)
-
-        if self.deviceFailedStart:
-            return
-        self.start_device()
         
         
 
@@ -266,8 +271,10 @@ class Draxboard(SerialDevice):
         for i in range(int(len(readLine) / readBlockSize)):
             tempLine = readLine[i*readBlockSize:((i+1)*readBlockSize)]
             if (tempLine[0].encode('hex') == 'fa'):
-                print (tempLine[3].encode('hex'))
+                
 
+    def add_input_event_to_device_manager(self, inputByte):
+        return
 
 
 
