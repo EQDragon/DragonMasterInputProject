@@ -347,14 +347,15 @@ class DBV400(SerialDevice):
 
     def on_data_received_event(self):
         read = read_serial_device(self)
-        print('PR',+read.encode('hex')
+        print(read.encode('hex'))
     ######################Start If Statements#############################
         if len(read) >= 11:
-            if(read[8].encode('hex') == '0x55' and read[9].encode('hex') == '0x53' and read.encode('hex') == '0x44')"
-                denomination = (int(read[11])
+            if read[8].encode('hex') == '0x55' and read[9].encode('hex') == '0x53' and read.encode('hex') == '0x44':
+                denomination = int(read[11])
                 write_serial_device(self,self.ESCROW_ACK)
-                read = write_serial_device_wait_multiple_read(self,self.STACK_INHIBIT, maxMillisecondsToWait = 500) 
+                read = write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, maxMillisecondsToWait = 500)
                 for x in range(0,11000):
+                    pass
                     
         pass
 
