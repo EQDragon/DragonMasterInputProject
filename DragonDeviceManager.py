@@ -17,6 +17,8 @@ class DragonMasterDeviceManager:
         self.deviceDictionary = {}
 
 
+
+
     """
     Use this method to add a new device to the list of all connected 
     dragon master devices
@@ -36,14 +38,25 @@ class DragonMasterDeviceManager:
 
             pass
 
+    """
+    Searches for all valid dragon master devices to add to the device manager. Polls for 
+    Draxboard, DBV-400, Joysticks, and Ticket Printers
+    """
     def poll_search_devices(self):
         #Get All Drax Devices
         draxElementList = DragonMasterSerialDevice.get_all_drax_comports()
         for element in draxElementList:
             if element != None and element.port != None:
                 pass
+        return
 
+    """
+    Polls all attached devices and checks if there are any malfunctions among any of the devices.
+    Will remove any device that is currently malfunctioned
+    """
+    def poll_malfunctioned_devices(self):
 
+        return
 
     #############Contains Methods############################################
 
