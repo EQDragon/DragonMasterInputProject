@@ -18,7 +18,6 @@ def open_serial_device(comport, baudrate, readTimeout, writeTimeout):
             parity=serial.PARITY_NONE,
             bytesize=serial.EIGHTBITS,
             timeout=readTimeout,
-
             writeTimeout=writeTimeout
         )
         return s
@@ -347,6 +346,7 @@ class DBV400(SerialDevice):
         pass
 
     def start_device(self):
+        SerialDevice.start_device(self)
         pass
 
     def to_string(self):
