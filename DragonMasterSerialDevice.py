@@ -330,6 +330,9 @@ class DBV400(SerialDevice):
         pass
 
     ######################DBV Commands#############################
+    """
+    Resets the dbv-400 device. Once complete, dbv should be in the idle state ready to receive bills
+    """
     def reset_dbv(self):
         readLineList = write_serial_device_wait_multiple_read(self, self.REQUEST_STATUS, maxMillisecondsToWait = 400, desiredReadCount = 2)
 
@@ -347,6 +350,9 @@ class DBV400(SerialDevice):
         STATE = self.get_state()
         return
 
+    """
+    Will set the associate dbv-400 device into the idle state, DBV can accept bills from this state
+    """
     def idle_dbv(self):
         readLineList = write_serial_device_wait_multiple_read(self, self.IDLE_REQUEST, maxMillisecondsToWait = 10, desiredReadCount = 2)
         idleInfo = bytearray(readLineList[1])
@@ -355,6 +361,23 @@ class DBV400(SerialDevice):
         self.serialDevice.flushInput()
         self.serialDevice.flushOutput()
         write_serial_device(self, self.IDLE_ACK)
+        self.serialDevice.flushInput()
+        self.serialDevice.flushOutput()
+
+        STATE = self.get_state()
+        return
+
+    """
+    Will set the associated dbv-400 device into the inhibit state. DBV can not accept bills in this state
+    """
+    def inhibit_dbv(self):
+        readLineList = write_serial_device_wait_multiple_read(self, self.INHIBIT_REQUEST, maxMillisecondsToWait = 10, desiredReadCount = 2)
+        inhibitInfo = bytearray(readLineList[1])
+
+        self.INHIBIT_ACK[5] = inhibitInfo[5]
+
+        write_serial_device(self, self.INHIBIT_ACK)
+
         self.serialDevice.flushInput()
         self.serialDevice.flushOutput()
 
