@@ -3,6 +3,7 @@ import DragonMasterSerialDevice
 import inputs
 from time import sleep
 import pygame
+import Queue
 import syslog
 
 
@@ -11,6 +12,7 @@ import syslog
 class DragonMasterDeviceManager:
 
     def __init__(self):
+        self.eventQueue = Queue.Queue()
         self.deviceList = []
         self.deviceDictionary = {}
 
@@ -55,6 +57,20 @@ class DragonMasterDeviceManager:
         return
 
     def manager_contains_joystick_device(self, joystickDevice):
+
+        return
+
+
+    ########################################################################
+
+    ######################EVENT METHODS#####################################
+    """
+    Writes a new event to a queue that will be written to a text file for later use.
+    Use this to write a button event as well as any error events that may occur with the
+    device manager
+    """
+    def add_event_to_queue(self, eventString):
+        self.eventQueue.put(eventString)
 
         return
     ########################################################################
