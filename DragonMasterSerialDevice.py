@@ -39,6 +39,21 @@ def close_serial_device(serialDevice):
 
 
 """
+A safe method to flush the input and output streams of a serial device
+"""
+def flush_serial_device(dragonMasterSerialDevice):
+    serialDevice = dragonMasterSerialDevice.serialDevice
+    try:
+        serialDevice.flushInput()
+        serialDevice.flushOutput()
+    except:
+        "There was an error flushing serial device " + dragonMasterSerialDevice.to_string()
+
+    return
+
+
+
+"""
 Use this method if you expect multiple reads to take place after writing to a serial port
 This will return a list with the size 'desiredReadCount'
 
@@ -227,8 +242,7 @@ class SerialDevice:
         readPollingThread.daemon = False
         readPollingThread.start()
         
-
-    
+        
     def to_string(self):
         return "SerialDevice (" + self.comport + ")"
 
@@ -314,7 +328,12 @@ class DBV400(SerialDevice):
 
     #STATES OF DBV
     IDLE_STATE = "IDLE"
+    INHIBIT_STATE = "INHIBIT"
     NOT_INIT_STATE = "NOT INIT"
+    UNSUPPORTED_STATE = "UNSUPPORTED"
+    POWER_UP_STATE = "POWER UP"
+    POWER_UP_NACK_STATE = "POWER UP NACK"
+
 
     UID = 0x42
     
@@ -329,6 +348,9 @@ class DBV400(SerialDevice):
     def start_device(self):
         pass
 
+    def to_string(self):
+        return "DBV-400(" + self.comport + ")"
+
     ######################DBV Commands#############################
     """
     Resets the dbv-400 device. Once complete, dbv should be in the idle state ready to receive bills
@@ -339,11 +361,8 @@ class DBV400(SerialDevice):
         dbvInfoLine = bytearray(readLineList[1])#changed to byte array. Not sure if needed
         if dbvInfoLine != None and len(dbvInfoLine) > 5:
             self.INHIBIT_ACK[5] = dbvInfoLine[5]
-        try:
-            self.serialDevice.flushInput()
-            self.serialDevice.flushOutput()
-        except:
-            print "There was an error flushing the serial device of DBV400(" + self.comport + ")"
+
+        flush_serial_device(self)
 
         if (self.STATE == self.IDLE_STATE):
             self.idle_dbv()
@@ -358,11 +377,11 @@ class DBV400(SerialDevice):
         idleInfo = bytearray(readLineList[1])
 
         self.IDLE_ACK[5] = idleInfo[5]
-        self.serialDevice.flushInput()
-        self.serialDevice.flushOutput()
+
+        flush_serial_device(self)
+
         write_serial_device(self, self.IDLE_ACK)
-        self.serialDevice.flushInput()
-        self.serialDevice.flushOutput()
+        flush_serial_device(self)
 
         STATE = self.get_state()
         return
@@ -377,11 +396,12 @@ class DBV400(SerialDevice):
         self.INHIBIT_ACK[5] = inhibitInfo[5]
 
         write_serial_device(self, self.INHIBIT_ACK)
-
-        self.serialDevice.flushInput()
-        self.serialDevice.flushOutput()
+        flush_serial_device(self)
 
         STATE = self.get_state()
+        return
+
+    def start_dbv(self):
         return
 
 
