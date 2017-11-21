@@ -202,7 +202,8 @@ comport
 class SerialDevice:
     
 
-    def __init__(self, comport, bauderate = 9600):
+    def __init__(self, comport, baudrate = 9600):
+        self.baudrate = baudrate
         self.blockReadEvent = False
         self.deviceFailedStart = False
         self.comport = comport
@@ -217,7 +218,7 @@ class SerialDevice:
     Default start_device begins the polling for any read events that the serial device may trigger
     """
     def start_device(self):
-        self.serialDevice = open_serial_device(comport=self.comport, baudrate=bauderate, readTimeout=3, writeTimeout=5)
+        self.serialDevice = open_serial_device(comport=self.comport, baudrate=self.baudrate, readTimeout=3, writeTimeout=5)
         if (self.serialDevice == None):
             self.deviceFailedStart = True
 
@@ -249,11 +250,14 @@ class Draxboard(SerialDevice):
     CLEAR_OUTPUTS = bytearray([0x04, 0x02, 0x05, 0x00, 0x00, 0x00, 0x00, 0x0B])
     OUTPUT_DISABLE = bytearray([0x07, 0x03, 0x05, 0xff, 0xff, 0xff, 0xff, 0x0B])
 
+    BYTE_SIZE = 8
+    INPUT_BYTE_INDEX = 3
+
 
 
 
     def __init__(self, comport):
-        SerialDevice.__init__(self, comport, bauderate=115200)
+        SerialDevice.__init__(self, comport, baudrate=115200)
         
         
 
@@ -270,13 +274,20 @@ class Draxboard(SerialDevice):
 
         for i in range(int(len(readLine) / readBlockSize)):
             tempLine = readLine[i*readBlockSize:((i+1)*readBlockSize)]
-            if (tempLine[0].encode('hex') == 'fa'):
+            if (tempLine[0].encode('hex') == 'fa' and len(tempLine) >= 3):
+                self.add_input_event_to_device_manager(tempLine[self.INPUT_BYTE_INDEX].encode('hex'))
                 
 
     def add_input_event_to_device_manager(self, inputByte):
-        return
+        inputByteInt = int(inputByte, 16)#inputByte is passed as a hex string. Need to convert to int value.
 
-
+        inputByteString = ''
+        for i in range(self.BYTE_SIZE):
+            if inputByteInt & (1 << i) != 0:
+                inputByteString += '1'
+            else:
+                inputByteString += '0'
+        print ('DRAX|' + inputByteString + '|')
 
 
 
