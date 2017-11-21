@@ -357,7 +357,7 @@ class DBV400(SerialDevice):
     Resets the dbv-400 device. Once complete, dbv should be in the idle state ready to receive bills
     """
     def reset_dbv(self):
-        readLineList = write_serial_device_wait_multiple_read(self, self.REQUEST_STATUS, maxMillisecondsToWait = 400, desiredReadCount = 2)
+        readLineList = write_serial_device_wait_multiple_read(self, self.RESET_REQUEST, maxMillisecondsToWait = 5000, desiredReadCount = 2)
 
         dbvInfoLine = bytearray(readLineList[1])#changed to byte array. Not sure if needed
         if dbvInfoLine != None and len(dbvInfoLine) > 5:
