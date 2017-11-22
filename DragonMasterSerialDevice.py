@@ -329,6 +329,7 @@ class DBV400(SerialDevice):
     ERROR_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x00, 0x80, 0x01, 0x12, 0x06])
     STACK_INHIBIT = bytearray([0x12, 0x08, 0x00, 0x10, 0x02, 0x00, 0x14, 0x10])
     VEND_VALID_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x02, 0x86, 0x03, 0x11, 0x06])
+    ERROR_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x00, 0x80, 0x01, 0x12, 0x06])
 
     #STATES OF DBV
     IDLE_STATE = "IDLE"
@@ -337,6 +338,7 @@ class DBV400(SerialDevice):
     UNSUPPORTED_STATE = "UNSUPPORTED"
     POWER_UP_STATE = "POWER UP"
     POWER_UP_NACK_STATE = "POWER UP NACK"
+    ERROR_STATE = "ERROR"
 
     #UID (ARBITRARY)
     UID = 0x42
@@ -350,14 +352,71 @@ class DBV400(SerialDevice):
         print(read.encode('hex'))
     ######################Start If Statements#############################
         if len(read) >= 11:
-            if read[8].encode('hex') == '0x55' and read[9].encode('hex') == '0x53' and read.encode('hex') == '0x44':
+            if read[8].encode('hex') == '55' and read[9].encode('hex') == '53' and read.encode('hex') == '44':
                 denomination = int(read[11])
                 write_serial_device(self,self.ESCROW_ACK)
-                read = write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, maxMillisecondsToWait = 500)
-                for x in range(0,11000):
-                    pass
-                    
-        pass
+                read = bytearray(write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, minBytesToRead=1, maxMilisecondsToWaitPerRead=10, desiredReadCount=2)[1])
+                err = str(read[8])
+                if(len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11' and err.find("7") != -1):
+                    print('DBV BILL REJECT')
+                    self.BILL_REJECT[5] = read[5]
+                    read = write_serial_device_wait_for_read(self, self.BILL_REJECT, 1, 200)
+                    self.IDLE_ACK[5] = read[5]
+                    write_serial_device(self,self.IDLE_ACK)
+                    return
+                read =  write_serial_device_wait_for_read(self, self.VEND_VALID_ACK, 1, 300)
+                print('denomination = '+denomination) # Return denomination here
+                if len(read) > 0:
+                    self.INHIBIT_ACK[5] = read[5]
+                read = write_serial_device_wait_for_read(self,self.INHIBIT_ACK,1,500)
+                if len(read) > 0:
+                    self.IDLE_ACK[5] = read[5]
+                write_serial_device(self,self.IDLE_ACK)
+                wait(.4)
+                read = write_serial_device_wait_for_read(self,self.STATUS_REQUEST,1,200)
+            elif (len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11' and err.find(
+                    "7") != -1):
+                print('DBV BILL REJECT')
+                self.BILL_REJECT[5] = read[5]
+                read = write_serial_device_wait_for_read(self, self.BILL_REJECT, 1, 200)
+                self.IDLE_ACK[5] = read[5]
+                write_serial_device(self, self.IDLE_ACK)
+                return
+            elif read[7].encode('hex') == '00' and (read[8].encode('hex') == '00' or read[8].encode('hex') == '00') and read[9].encode('hex') == '01':
+                print("REINITIALIZE")
+                self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
+                self.RESET_REQUEST[4] = 0x00
+                self.INHIBIT_ACK[4] = 0x00
+                self.INHIBIT_REQUEST[4] = 0x00
+                self.IDLE_REQUEST[4] = 0x00
+                self.IDLE_ACK[4] = 0x00
+                self.SET_UID[8] = 0x00
+                self.start_dbv()
+                return
+            elif read[6].encode('hex') == '01' and read[7].encode('hex') == '12':
+                self.ERROR_ACK[5] = read[5]
+                self.ERROR_ACK[6] = read[6]
+                self.ERROR_ACK[7] = read[7]
+                write_serial_device(self,self.ERROR_ACK)
+                print('OP ERROR')
+            elif read[6].encode('hex') == '00' and read[7].encode('hex') == '12':
+                self.ERROR_ACK[5] = read[5]
+                self.ERROR_ACK[6] = read[6]
+                self.ERROR_ACK[7] = read[7]
+                write_serial_device(self, self.ERROR_ACK)
+                self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
+                self.RESET_REQUEST[4] = 0x00
+                self.INHIBIT_ACK[4] = 0x00
+                self.INHIBIT_REQUEST[4] = 0x00
+                self.IDLE_REQUEST[4] = 0x00
+                self.IDLE_ACK[4] = 0x00
+                self.SET_UID[8] = 0x00
+                self.start_dbv()
+                return
+
+
+
+
 
     def start_device(self):
         SerialDevice.start_device(self)
@@ -466,20 +525,22 @@ class DBV400(SerialDevice):
     def get_state(self, inputBytes):
         currentState = None
         if (len(inputBytes) >= 7 and inputBytes[8].encode('hex') == 'e4' and len(inputBytes) > 8):
-            currentState = POWER_UP_NACK_STATE
+            currentState = self.POWER_UP_NACK_STATE
         elif (inputBytes[1].encode('hex') == '0a'):
-            currentState = POWER_UP_NACK_STATE
+            currentState = self.POWER_UP_NACK_STATE
         elif (len(inputBytes) > 13 and inputBytes[11].encode('hex') == '00' and inputBytes[12].encode(
                 'hex') == '01' and inputBytes[13].encode('hex') == '00'):
-            currentState = POWER_UP_STATE
+            currentState = self.POWER_UP_STATE
         elif (len(inputBytes) >= 8 and inputBytes[8].encode('hex') == 'e2'):
-            currentState = UNSUPPORTED_STATE
+            currentState = self.UNSUPPORTED_STATE
         elif (len(inputBytes) >= 12 and inputBytes[10].encode('hex') == '00' and inputBytes[11].encode(
                 'hex') == '01' and inputBytes[12].encode('hex') == '01'):
-            currentState = INHIBIT_STATE
+            currentState = self.INHIBIT_STATE
         elif (len(inputBytes) >= 12 and inputBytes[10].encode('hex') == '01' and inputBytes[11].encode(
                 'hex') == '11' and inputBytes[12].encode('hex') == '11'):
-            currentState = IDLE_STATE
+            currentState = self.IDLE_STATE
+        elif (len(inputBytes) >= 13 and inputBytes[12].encode('hex') == '11' and inputBytes[13].encode('hex') == 'ff'):
+            currentState = self.ERROR_STATE
         print(currentState)
         return currentState
 
