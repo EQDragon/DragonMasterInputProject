@@ -115,10 +115,8 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
 """
 safely write to a serial port. This method will not return any read values
 """
-def write_serial_device(serialDevice, dataToWrite):
-
-    if serialDevice == None or not serialDevice.is_open:
-        return
+def write_serial_device(dragonMasterSerialDevice, dataToWrite):
+    serialDevice = dragonMasterSerialDevice.serialDevice
 
     try:
         serialDevice.write(dataToWrite)

@@ -123,6 +123,7 @@ class DragonMasterDeviceManager:
     Writes a new event to a queue that will be written to a text file for later use.
     Use this to write a button event as well as any error events that may occur with the
     device manager
+
     """
     def add_event_to_queue(self, eventString):
         self.eventQueue.put(eventString)
@@ -136,6 +137,7 @@ class DragonMasterDeviceManager:
     def write_to_text_input(self):
         if self.eventQueue.qsize() > 0:
             inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
+
             
 
 
