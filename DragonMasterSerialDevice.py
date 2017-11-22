@@ -356,7 +356,7 @@ class DBV400(SerialDevice):
                 denomination = int(read[11])
                 write_serial_device(self,self.ESCROW_ACK)
                 read = bytearray(write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, minBytesToRead=1, maxMilisecondsToWaitPerRead=10, desiredReadCount=2)[1])
-                err = str(read[8])
+                err = str(read[8]) #Checking for 7 in byte
                 if(len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11' and err.find("7") != -1):
                     print('DBV BILL REJECT')
                     self.BILL_REJECT[5] = read[5]
