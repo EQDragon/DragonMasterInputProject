@@ -311,7 +311,9 @@ class Draxboard(SerialDevice):
 
     def start_device(self):
         SerialDevice.start_device(self)
-        print write_serial_device_wait_for_read(self, self.REQUEST_STATUS)
+        if write_serial_device_wait_for_read(self, self.REQUEST_STATUS) == None:
+            self.deviceFailedStart = True
+        return
 
 
 
