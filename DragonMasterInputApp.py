@@ -16,8 +16,6 @@ dragonMasterDeviceManager = DragonDeviceManager.DragonMasterDeviceManager()
 
 
 
-user_input = raw_input()
-while user_input != 'exit':
-    user_input = raw_input()
-    pass
+while 1:
+	pass
 

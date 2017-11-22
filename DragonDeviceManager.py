@@ -21,7 +21,58 @@ class DragonMasterDeviceManager:
 
         self.poll_search_devices()
 
+        self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
+        self.writePollingThread.daemon = False
+        self.writePollingThread.start()
 
+
+    ######################THREADED METHODS#######################################
+
+    """
+    Thread that is used to write all the current events to a text file
+    Runs roughly 60 times a second
+    """
+    def poll_write_to_input_text(self):
+
+        while True:
+            self.write_to_text_input()
+            sleep(.016)#Wait 1/60 of a second
+
+    """
+    Thread that is used to pass in debug commands through the console.
+    Probably want to deactivate this functionality in final build....
+    """
+    def poll_debug_commands(self):
+
+        while True:
+            inputLine = raw_input()
+            inputLineComponents = inputLine.split()
+
+            if len(inputLineComponents) > 0:
+                command = inputLineComponents[0]
+
+                if command == 'status':
+
+                    pass
+                elif command == 'reset':
+                    if len(inputLineComponents) >= 2:
+                        self.debug_reset_dbv(inputLineComponents[1])
+                    pass
+                elif command == 'idle':
+                    if len(inputLineComponents) >= 2:
+                        self.debug_idle_dbv(inputLineComponents[1])
+                    pass
+                elif command == 'inhibit':
+                    if len(inputLineComponents) >= 2:
+                        self.debug_inhibit_dbv(inputLineComponents[1])
+                    pass
+        return
+
+
+
+
+
+    #############################################################################
 
 
     """
@@ -155,6 +206,40 @@ class DragonMasterDeviceManager:
         dbv = playerStation.dbvDevice
         joy = playerStation.joystickDevice
         pass
+
+
+    """
+    Calls the idle function in the DBV400 device that matches the comport provided
+    """
+    def debug_idle_dbv(self, dbvDeviceComport):
+        for dev in self.deviceList:
+            if dev is DBV400 and dev.comport == dbvDeviceComport:
+                dev.idle_dbv()
+                return
+        return
+
+    """
+    Calls the reset function in the DBV400 device that matches the comport provided
+    """
+    def debug_reset_dbv(self, dbvDeviceComport):
+        for dev in self.deviceList:
+            if dev is DBV400 and dev.comport == dbvDeviceComport:
+                dev.reset_dbv()
+                return
+        return
+
+    """
+    Calls the inhibiti function in the DBV400 device that matches the comport provided
+    """
+    def debug_inhibit_dbv(self, dbvDeviceComport):
+        for dev in self.deviceList:
+            if dev is DBV400 and dev.comport == dbvDeviceComport:
+                dev.inhibit_dbv()
+                return
+
+        return
+
+
 
     ########################################################################
 
