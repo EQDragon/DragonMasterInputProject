@@ -200,6 +200,40 @@ class DragonMasterDeviceManager:
         joy = playerStation.joystickDevice
         pass
 
+
+    """
+    Calls the idle function in the DBV400 device that matches the comport provided
+    """
+    def debug_idle_dbv(self, dbvDeviceComport):
+        for dev in self.deviceList:
+            if dev is DBV400 and dev.comport == dbvDeviceComport:
+                dev.idle_dbv()
+                return
+        return
+
+    """
+    Calls the reset function in the DBV400 device that matches the comport provided
+    """
+    def debug_reset_dbv(self, dbvDeviceComport):
+        for dev in self.deviceList:
+            if dev is DBV400 and dev.comport == dbvDeviceComport:
+                dev.reset_dbv()
+                return
+        return
+
+    """
+    Calls the inhibiti function in the DBV400 device that matches the comport provided
+    """
+    def debug_inhibit_dbv(self, dbvDeviceComport):
+        for dev in self.deviceList:
+            if dev is DBV400 and dev.comport == dbvDeviceComport:
+                dev.inhibit_dbv()
+                return
+
+        return
+
+
+
     ########################################################################
 
 
