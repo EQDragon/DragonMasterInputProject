@@ -372,7 +372,7 @@ class DBV400(SerialDevice):
                 if len(read) > 0:
                     self.IDLE_ACK[5] = read[5]
                 write_serial_device(self,self.IDLE_ACK)
-                wait(.4)
+                sleep(.2)
                 read = write_serial_device_wait_for_read(self,self.STATUS_REQUEST,1,200)
             elif (len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11' and err.find(
                     "7") != -1):
@@ -382,7 +382,7 @@ class DBV400(SerialDevice):
                 self.IDLE_ACK[5] = read[5]
                 write_serial_device(self, self.IDLE_ACK)
                 return
-            elif read[7].encode('hex') == '00' and (read[8].encode('hex') == '00' or read[8].encode('hex') == '00') and read[9].encode('hex') == '01':
+            elif len(read) >= 8 and read[7].encode('hex') == '00' and (read[8].encode('hex') == '00' or read[8].encode('hex') == '00') and read[9].encode('hex') == '01':
                 print("REINITIALIZE")
                 self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
                 self.RESET_REQUEST[4] = 0x00
@@ -393,13 +393,13 @@ class DBV400(SerialDevice):
                 self.SET_UID[8] = 0x00
                 self.start_dbv()
                 return
-            elif read[6].encode('hex') == '01' and read[7].encode('hex') == '12':
+            elif len(read) >= 7 and read[6].encode('hex') == '01' and read[7].encode('hex') == '12':
                 self.ERROR_ACK[5] = read[5]
                 self.ERROR_ACK[6] = read[6]
                 self.ERROR_ACK[7] = read[7]
                 write_serial_device(self,self.ERROR_ACK)
                 print('OP ERROR')
-            elif read[6].encode('hex') == '00' and read[7].encode('hex') == '12':
+            elif len(read) >= 7 and read[6].encode('hex') == '00' and read[7].encode('hex') == '12':
                 self.ERROR_ACK[5] = read[5]
                 self.ERROR_ACK[6] = read[6]
                 self.ERROR_ACK[7] = read[7]
