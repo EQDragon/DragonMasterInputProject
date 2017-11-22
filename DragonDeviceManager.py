@@ -13,13 +13,14 @@ class DragonMasterDeviceManager:
 
     DRAGON_DEVICE_INPUT_TEXT_FILE = "DragonMasterInput.txt"
     DRAGON_DEVICE_OUTPUT_TEXT_FILE = "DragonMasterOutput.txt"
+    POLL_TIME_IN_SECONDS = 2
 
     def __init__(self):
         self.eventQueue = Queue.Queue()
         self.deviceList = []
         self.deviceDictionary = {}
 
-        self.poll_search_devices()
+        self.search_devices()
 
 
         #Thread for writing to text file
@@ -28,6 +29,16 @@ class DragonMasterDeviceManager:
         self.writePollingThread.start()
 
         #Thread for polling devices to make sure they are not malfunctioning
+        self.debugCommandThread = threading.Thread(target=self.poll_debug_commands)
+        self.debugCommandThread.daemon = False
+        self.debugCommandThread.start()
+
+        #Thread to poll devices for malfunctions and reconnection
+        self.pollDeviceThread = threading.Thread(target=self.poll_devices)
+        self.pollDeviceThread.daemon = False
+        self.pollDeviceThread.start()
+
+
 
 
     ######################THREADED METHODS#######################################
@@ -77,6 +88,10 @@ class DragonMasterDeviceManager:
         return
 
 
+    def poll_devices(self):
+        while True:
+            self.search_devices()
+            sleep(2)
 
 
 
@@ -108,7 +123,7 @@ class DragonMasterDeviceManager:
     Searches for all valid dragon master devices to add to the device manager. Polls for 
     Draxboard, DBV-400, Joysticks, and Ticket Printers
     """
-    def poll_search_devices(self):
+    def search_devices(self):
         #Get All Drax Devices
         draxElementList = DragonMasterSerialDevice.get_all_drax_comports()
         for element in draxElementList:
@@ -206,12 +221,13 @@ class DragonMasterDeviceManager:
     ####################Debug Methods#######################################
 
     def print_help_options(self):
+        print set_string_length("-", lengthOfString=60, spacingChar='-')
         print "Hello! You may enter commands to test various components in the Dragon Master Input Manager"
         print "\'status\' - Prints the status of all the devices currently connected to the machine"
         print "\'idle\' - Enter this command followed by the comport of the DBV400 to set it to the idle state"
         print "\'inhibit\' - Enter this command followed by the comport of the DBV400 to set it to the inhibit state"
         print "\'reset\' - Enter this command followed by the comport of the DBV400 to reset the device. Will be set to idle after reset is complete"
-        print ""
+        print set_string_length("-", lengthOfString=60, spacingChar='-')
 
     def print_all_player_station_status(self):
         pass
@@ -232,7 +248,7 @@ class DragonMasterDeviceManager:
     """
     def debug_idle_dbv(self, dbvDeviceComport):
         for dev in self.deviceList:
-            if dev is DBV400 and dev.comport == dbvDeviceComport:
+            if dev is DragonMasterDeviceManager.DBV400 and dev.comport == dbvDeviceComport:
                 dev.idle_dbv()
                 return
         return
@@ -242,7 +258,7 @@ class DragonMasterDeviceManager:
     """
     def debug_reset_dbv(self, dbvDeviceComport):
         for dev in self.deviceList:
-            if dev is DBV400 and dev.comport == dbvDeviceComport:
+            if dev is DragonMasterDeviceManager.DBV400 and dev.comport == dbvDeviceComport:
                 dev.reset_dbv()
                 return
         return
@@ -252,7 +268,7 @@ class DragonMasterDeviceManager:
     """
     def debug_inhibit_dbv(self, dbvDeviceComport):
         for dev in self.deviceList:
-            if dev is DBV400 and dev.comport == dbvDeviceComport:
+            if dev is DragonMasterDeviceManager.DBV400 and dev.comport == dbvDeviceComport:
                 dev.inhibit_dbv()
                 return
 
@@ -340,7 +356,7 @@ def set_string_length(string1, lengthOfString = 60, spacingChar = ' '):
     return newStringToReturn
 
 """
-Returns a new string that is of size lenghtOfString. Fills the remaining space between string1 and string2
+Returns a new string that is of size lengthOfString. Fills the remaining space between string1 and string2
 with the char spacingChar. Please make sure that the variable spacingChar is of length = 1 if you want
 accurately sized string.
 """
