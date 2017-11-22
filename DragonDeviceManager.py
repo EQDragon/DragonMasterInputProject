@@ -20,8 +20,6 @@ class DragonMasterDeviceManager:
         self.deviceList = []
         self.deviceDictionary = {}
 
-        self.search_devices()
-
 
         #Thread for writing to text file
         self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
@@ -162,7 +160,12 @@ class DragonMasterDeviceManager:
         if draxDeviceComport == None:
             return False
 
+        for dev in self.deviceList:
+            if isinstance(dev, DragonMasterSerialDevice.Draxboard):
+                if dev.comport == draxDeviceComport:
+                    return True
 
+                    
         for playerStation in self.deviceDictionary.items():
             if playerStation != None and playerStation.draxboardDevice != None:
                 if playerStation.draxboardDevice.comport == draxDeviceComport:
