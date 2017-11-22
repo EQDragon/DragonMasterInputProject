@@ -239,7 +239,7 @@ class SerialDevice:
             self.deviceFailedStart = True
 
         readPollingThread = threading.Thread(target=poll_serial_thread, args=(self,))
-        readPollingThread.daemon = False
+        readPollingThread.daemon = True
         readPollingThread.start()
         
         

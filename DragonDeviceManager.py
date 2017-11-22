@@ -23,17 +23,17 @@ class DragonMasterDeviceManager:
 
         #Thread for writing to text file
         self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
-        self.writePollingThread.daemon = False
+        self.writePollingThread.daemon = True
         self.writePollingThread.start()
 
         #Thread for polling devices to make sure they are not malfunctioning
         self.debugCommandThread = threading.Thread(target=self.poll_debug_commands)
-        self.debugCommandThread.daemon = False
+        self.debugCommandThread.daemon = True
         self.debugCommandThread.start()
 
         #Thread to poll devices for malfunctions and reconnection
         self.pollDeviceThread = threading.Thread(target=self.poll_devices)
-        self.pollDeviceThread.daemon = False
+        self.pollDeviceThread.daemon = True
         self.pollDeviceThread.start()
 
 
@@ -68,7 +68,7 @@ class DragonMasterDeviceManager:
                     self.print_all_player_station_status()
                     pass
                 elif command == 'help':
-                    self.print_help_text()
+                    self.print_help_options()
                 elif command == 'reset':
                     if len(inputLineComponents) >= 2:
                         self.debug_reset_dbv(inputLineComponents[1])
@@ -160,7 +160,7 @@ class DragonMasterDeviceManager:
         if draxDeviceComport == None:
             return False
 
-        for dev in self.deviceList:
+        for dev in self.deviceList:#REMOVE THIS FOR LOOP WHEN DEVICE DICTIONARY IS ADDED
             if isinstance(dev, DragonMasterSerialDevice.Draxboard):
                 if dev.comport == draxDeviceComport:
                     return True
@@ -181,6 +181,12 @@ class DragonMasterDeviceManager:
     def manager_contains_dbv_device(self, dbvDeviceComport):
         if dbvDeviceComport == None:
             return False
+
+        for dev in self.deviceList:#REMOVE THIS FOR LOOP ONCE DEVICE DITIONARY IS ADDED
+            if isinstance(dev, DragonMasterSerialDevice.Draxboard):
+                if dev.comport == dbvDeviceComport:
+                    return True
+
 
         for playerStation in self.deviceDictionary.items():
             if playerStation != None and playerStation.dbvDevice != None:
