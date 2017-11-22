@@ -52,7 +52,7 @@ class DragonMasterDeviceManager:
                 command = inputLineComponents[0]
 
                 if command == 'status':
-
+                    self.print_all_player_station_status()
                     pass
                 elif command == 'reset':
                     if len(inputLineComponents) >= 2:
@@ -196,6 +196,9 @@ class DragonMasterDeviceManager:
 
     ########################################################################
     ####################Debug Methods#######################################
+
+    def print_all_player_station_status(self):
+        pass
 
     def print_player_station_status(self, playerStationParentDeviceKey):
         if not self.deviceDictionary.has_key(playerStationParentDeviceKey):
