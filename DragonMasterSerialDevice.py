@@ -315,6 +315,11 @@ class Draxboard(SerialDevice):
 
 #===============================================================================================================================================
 class DBV400(SerialDevice):
+    #Variables used for blocking data received events
+    INIT = 1
+    BUSY = 0
+    PASSIVE_RECEIVE = 0
+
     #COMMANDS
     STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
     POWER_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x00, 0x81, 0x00, 0x00, 0x06])
@@ -345,18 +350,19 @@ class DBV400(SerialDevice):
     
     def __init__(self, comport):
         self.STATE = self.NOT_INIT_STATE
-        SerialDevice.__init__(self, comport, bauderate=9600)
+        SerialDevice.__init__(self, comport, baudrate=9600)
 
     def on_data_received_event(self):
-        read = read_serial_device(self)
-        print(read.encode('hex'))
+      if self.INIT == 0 and self.PASSIVE_RECEIVE == 1:
+        read = bytearray(read_serial_device())
+        print('PR: '+read.encode('hex'))
     ######################Start If Statements#############################
         if len(read) >= 11:
             err = str(read[8])
             if read[8].encode('hex') == '55' and read[9].encode('hex') == '53' and read.encode('hex') == '44':
                 denomination = int(read[11])
                 write_serial_device(self,self.ESCROW_ACK)
-                read = bytearray(write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, minBytesToRead=1, maxMilisecondsToWaitPerRead=10, desiredReadCount=2)[1])
+                read = bytearray(write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, minBytesToRead=1, maxMilisecondsToWaitPerRead=100, desiredReadCount=2)[1])
                 err = str(read[8]) #Checking for 7 in byte
                 if(len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11' and err.find("7") != -1):
                     print('DBV BILL REJECT')
@@ -374,7 +380,7 @@ class DBV400(SerialDevice):
                     self.IDLE_ACK[5] = read[5]
                 write_serial_device(self,self.IDLE_ACK)
                 sleep(.2)
-                read = write_serial_device_wait_for_read(self,self.STATUS_REQUEST,1,200)
+                self.STATE = self.get_state()
             elif (len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11' and err.find("7") != -1):
                 print('DBV BILL REJECT')
                 self.BILL_REJECT[5] = read[5]
@@ -385,12 +391,12 @@ class DBV400(SerialDevice):
             elif len(read) >= 8 and read[7].encode('hex') == '00' and (read[8].encode('hex') == '00' or read[8].encode('hex') == '00') and read[9].encode('hex') == '01':
                 print("REINITIALIZE")
                 self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
-                self.RESET_REQUEST[4] = 0x00
-                self.INHIBIT_ACK[4] = 0x00
-                self.INHIBIT_REQUEST[4] = 0x00
-                self.IDLE_REQUEST[4] = 0x00
-                self.IDLE_ACK[4] = 0x00
-                self.SET_UID[8] = 0x00
+                self.RESET_REQUEST[4] = 0x01
+                self.INHIBIT_ACK[4] = 0x01
+                self.INHIBIT_REQUEST[4] = 0x01
+                self.IDLE_REQUEST[4] = 0x01
+                self.IDLE_ACK[4] = 0x01
+                self.SET_UID[8] = 0x01
                 self.start_dbv()
                 return
             elif len(read) >= 7 and read[6].encode('hex') == '01' and read[7].encode('hex') == '12':
@@ -405,12 +411,12 @@ class DBV400(SerialDevice):
                 self.ERROR_ACK[7] = read[7]
                 write_serial_device(self, self.ERROR_ACK)
                 self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
-                self.RESET_REQUEST[4] = 0x00
-                self.INHIBIT_ACK[4] = 0x00
-                self.INHIBIT_REQUEST[4] = 0x00
-                self.IDLE_REQUEST[4] = 0x00
-                self.IDLE_ACK[4] = 0x00
-                self.SET_UID[8] = 0x00
+                self.RESET_REQUEST[4] = 0x01
+                self.INHIBIT_ACK[4] = 0x01
+                self.INHIBIT_REQUEST[4] = 0x01
+                self.IDLE_REQUEST[4] = 0x01
+                self.IDLE_ACK[4] = 0x01
+                self.SET_UID[8] = 0x01
                 self.start_dbv()
                 return
 
@@ -420,6 +426,8 @@ class DBV400(SerialDevice):
 
     def start_device(self):
         SerialDevice.start_device(self)
+        print('here?')
+        self.start_dbv()
         pass
 
     def to_string(self):
@@ -430,6 +438,7 @@ class DBV400(SerialDevice):
     Resets the dbv-400 device. Once complete, dbv should be in the idle state ready to receive bills
     """
     def reset_dbv(self):
+        self.PASSIVE_RECEIVE = 0
         readLineList = write_serial_device_wait_multiple_read(self, self.RESET_REQUEST, maxMillisecondsToWait = 5000, desiredReadCount = 2)
 
         dbvInfoLine = bytearray(readLineList[1])#changed to byte array. Not sure if needed
@@ -441,12 +450,14 @@ class DBV400(SerialDevice):
         if (self.STATE == self.IDLE_STATE):
             self.idle_dbv()
         self.STATE = self.get_state()
+        self.PASSIVE_RECEIVE = 1
         return
 
     """
     Will set the associate dbv-400 device into the idle state, DBV can accept bills from this state
     """
     def idle_dbv(self):
+        self.PASSIVE_RECEIVE = 0
         readLineList = write_serial_device_wait_multiple_read(self, self.IDLE_REQUEST, maxMillisecondsToWait = 10, desiredReadCount = 2)
         idleInfo = bytearray(readLineList[1])
 
@@ -458,12 +469,14 @@ class DBV400(SerialDevice):
         flush_serial_device(self)
 
         self.STATE = self.get_state()
+        self.PASSIVE_RECEIVE = 1
         return
 
     """
     Will set the associated dbv-400 device into the inhibit state. DBV can not accept bills in this state
     """
     def inhibit_dbv(self):
+        self.PASSIVE_RECEIVE = 0
         readLineList = write_serial_device_wait_multiple_read(self, self.INHIBIT_REQUEST, maxMillisecondsToWait = 10, desiredReadCount = 2)
         inhibitInfo = bytearray(readLineList[1])
 
@@ -473,10 +486,13 @@ class DBV400(SerialDevice):
         flush_serial_device(self)
 
         self.STATE = self.get_state()
+        self.PASSIVE_RECEIVE = 1
         return
 
     def start_dbv(self):
-
+        self.PASSIVE_RECEIVE = 0
+        print('start')
+        self.INIT = 1
         flush_serial_device(self)
         self.STATE = self.get_state()
         flush_serial_device(self)
@@ -492,6 +508,7 @@ class DBV400(SerialDevice):
             flush_serial_device(self)
             write_serial_device(self, self.POWER_ACK)
             STATE = self.get_state()
+            self.PASSIVE_RECEIVE = 0
 
         if self.STATE == self.POWER_UP_STATE:
             self.set_uid()
@@ -502,8 +519,8 @@ class DBV400(SerialDevice):
         if self.STATE == self.INHIBIT_STATE:
             self.idle_dbv()
 
-        
-
+        self.INIT = 0
+        self.PASSIVE_RECEIVE = 1
         return
 
 
@@ -522,8 +539,10 @@ class DBV400(SerialDevice):
 
 
 
-    def get_state(self, inputBytes):
+    def get_state(self):
+        self.PASSIVE_RECEIVE = 0
         currentState = None
+        inputBytes = write_serial_device_wait_for_read(self,self.STATUS_REQUEST,1,3000)
         if (len(inputBytes) >= 7 and inputBytes[8].encode('hex') == 'e4' and len(inputBytes) > 8):
             currentState = self.POWER_UP_NACK_STATE
         elif (inputBytes[1].encode('hex') == '0a'):
@@ -542,6 +561,7 @@ class DBV400(SerialDevice):
         elif (len(inputBytes) >= 13 and inputBytes[12].encode('hex') == '11' and inputBytes[13].encode('hex') == 'ff'):
             currentState = self.ERROR_STATE
         print(currentState)
+        self.PASSIVE_RECEIVE = 1
         return currentState
 
 

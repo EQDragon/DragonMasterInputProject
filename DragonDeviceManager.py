@@ -1,8 +1,6 @@
 import threading
 import DragonMasterSerialDevice
-import inputs
 from time import sleep
-import pygame
 import Queue
 import syslog
 
