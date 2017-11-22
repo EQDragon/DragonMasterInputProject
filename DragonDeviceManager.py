@@ -2,6 +2,7 @@ import threading
 import DragonMasterSerialDevice
 from time import sleep
 import Queue
+import pygame
 import syslog
 import os
 
@@ -137,6 +138,7 @@ class DragonMasterDeviceManager:
     def write_to_text_input(self):
         if self.eventQueue.qsize() > 0:
             inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
+            print inputTextFileInfo.st_size
 
             
 

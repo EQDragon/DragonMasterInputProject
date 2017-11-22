@@ -60,7 +60,7 @@ This will return a list with the size 'desiredReadCount'
 (int) dataToWrite: The byte array that you want to write to the serial port
 (int) minBytesToRead: The minimum bytes on in
 """
-def write_serial_device_wait_multiple_read(dragonMasterSerialDevice, dataToWrite, minBytesToRead=1, maxMilisecondsToWaitPerRead=10, desiredReadCount=2):
+def write_serial_device_wait_multiple_read(dragonMasterSerialDevice, dataToWrite, minBytesToRead=1, maxMilisecondsToWaitPerRead=10, delayBeforeReadInMilliseconds = 2, desiredReadCount=2):
     readList = [None] * desiredReadCount
 
     dragonMasterSerialDevice.blockReadEvent = True
@@ -79,7 +79,7 @@ def write_serial_device_wait_multiple_read(dragonMasterSerialDevice, dataToWrite
     for i in range(desiredReadCount):
         for _ in range(maxMilisecondsToWaitPerRead):
             if serialDevice.in_waiting >= minBytesToRead:
-                readList[i] = read_serial_device(dragonMasterSerialDevice)
+                readList[i] = read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds=delayBeforeReadInMilliseconds)
                 break
             sleep(.001)
 
@@ -90,7 +90,7 @@ def write_serial_device_wait_multiple_read(dragonMasterSerialDevice, dataToWrite
 """
 safely writes to a serial port and 
 """
-def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, minBytesToRead = 1, maxMillisecondsToWait = 10):
+def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, minBytesToRead = 1, maxMillisecondsToWait = 10, delayBeforeReadInMilliseconds = 2):
     dragonMasterSerialDevice.blockReadEvent = True
 
     serialDevice = dragonMasterSerialDevice.serialDevice
@@ -106,8 +106,9 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
 
     for _ in range(maxMillisecondsToWait):
         if (serialDevice.in_waiting >= minBytesToRead):
+            readLine = read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds=delayBeforeReadInMilliseconds)
             dragonMasterSerialDevice.blockReadEvent = False
-            return read_serial_device(dragonMasterSerialDevice)
+            return readLine
         sleep(.001)
     print (dragonMasterSerialDevice.to_string() + " Timed Out")
 
@@ -140,6 +141,9 @@ def read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds =
         return None
 
 
+"""
+Polls a serial thread to check if at any point there is something to read from a given serial device
+"""
 def poll_serial_thread(dragonMasterSerialDevice):
     serialDevice = dragonMasterSerialDevice.serialDevice
     while True:
@@ -308,7 +312,8 @@ class Draxboard(SerialDevice):
 
     def start_device(self):
         SerialDevice.start_device(self)
-        print (write_serial_device_wait_for_read(self, self.REQUEST_STATUS))
+        print write_serial_device_wait_for_read(self, self.REQUEST_STATUS)
+
 
 
 #===============================================================================================================================================
