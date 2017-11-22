@@ -528,6 +528,10 @@ class DBV400(SerialDevice):
 
         if self.STATE == self.ERROR_STATE:
             self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
+            self.set_uid()
+            self.reset_dbv()
+            self.idle_dbv()
+
         self.INIT = 0
         self.PASSIVE_RECEIVE = 1
         return
@@ -557,6 +561,9 @@ class DBV400(SerialDevice):
         self.PASSIVE_RECEIVE = 0
         currentState = None
         inputBytes = write_serial_device_wait_for_read(self,self.STATUS_REQUEST,1,3000)
+        if (inputBytes == None):
+            currentState = self.NOT_INIT_STATE
+            return currentState
         if (len(inputBytes) >= 7 and inputBytes[8].encode('hex') == 'e4' and len(inputBytes) > 8):
             currentState = self.POWER_UP_NACK_STATE
         elif (inputBytes[1].encode('hex') == '0a'):
