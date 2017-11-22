@@ -315,6 +315,7 @@ class Draxboard(SerialDevice):
 
 #===============================================================================================================================================
 class DBV400(SerialDevice):
+    #Hello!!
     #Variables used for blocking data received events
     INIT = 1
     BUSY = 0
