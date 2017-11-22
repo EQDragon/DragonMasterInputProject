@@ -3,11 +3,15 @@ import DragonMasterSerialDevice
 from time import sleep
 import Queue
 import syslog
+import os
 
 
 
 
 class DragonMasterDeviceManager:
+
+    DRAGON_DEVICE_INPUT_TEXT_FILE = "DragonMasterInput.txt"
+    DRAGON_DEVICE_OUTPUT_TEXT_FILE = "DragonMasterOutput.txt"
 
     def __init__(self):
         self.eventQueue = Queue.Queue()
@@ -24,6 +28,8 @@ class DragonMasterDeviceManager:
     dragon master devices
     """
     def add_device(self, dragonMasterDevice):
+        if dragonMasterDevice == None:
+            return#Don't add a device if it is null
         self.deviceList.append(dragonMasterDevice)
         dragonMasterDevice.start_device()
         print dragonMasterDevice.to_string() + " has been added!"
@@ -33,9 +39,10 @@ class DragonMasterDeviceManager:
     malfunctioned devices so that they do not cause problems when polling
     """
     def remove_device(self, dragonMasterDevice):
-        if not self.deviceDictionary.has_key(dragonMasterDevice.devicePath):
+        if dragonMasterDevice == None:
+            return
 
-            pass
+        return
 
     """
     Searches for all valid dragon master devices to add to the device manager. Polls for 
@@ -63,6 +70,9 @@ class DragonMasterDeviceManager:
     Will remove any device that is currently malfunctioned
     """
     def poll_malfunctioned_devices(self):
+        for dragonMasterDevice in self.deviceList:
+            if dragonMasterDevice:
+                pass
 
         return
 
@@ -118,6 +128,17 @@ class DragonMasterDeviceManager:
         self.eventQueue.put(eventString)
 
         return
+
+    """
+    Writes all the current events in self.eventQueue to text file to be read in by
+    other programs
+    """
+    def write_to_text_input(self):
+        if self.eventQueue.qsize() > 0:
+            inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
+            
+
+
     ########################################################################
     ####################Debug Methods#######################################
 
