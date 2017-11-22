@@ -21,9 +21,13 @@ class DragonMasterDeviceManager:
 
         self.poll_search_devices()
 
+
+        #Thread for writing to text file
         self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
         self.writePollingThread.daemon = False
         self.writePollingThread.start()
+
+        #Thread for polling devices to make sure they are not malfunctioning
 
 
     ######################THREADED METHODS#######################################
@@ -54,6 +58,8 @@ class DragonMasterDeviceManager:
                 if command == 'status':
                     self.print_all_player_station_status()
                     pass
+                elif command == 'help':
+                    self.print_help_text()
                 elif command == 'reset':
                     if len(inputLineComponents) >= 2:
                         self.debug_reset_dbv(inputLineComponents[1])
@@ -66,6 +72,8 @@ class DragonMasterDeviceManager:
                     if len(inputLineComponents) >= 2:
                         self.debug_inhibit_dbv(inputLineComponents[1])
                     pass
+                else:
+                    print "\'" + command + "\' is not a valid command"
         return
 
 
@@ -196,6 +204,14 @@ class DragonMasterDeviceManager:
 
     ########################################################################
     ####################Debug Methods#######################################
+
+    def print_help_options(self):
+        print "Hello! You may enter commands to test various components in the Dragon Master Input Manager"
+        print "\'status\' - Prints the status of all the devices currently connected to the machine"
+        print "\'idle\' - Enter this command followed by the comport of the DBV400 to set it to the idle state"
+        print "\'inhibit\' - Enter this command followed by the comport of the DBV400 to set it to the inhibit state"
+        print "\'reset\' - Enter this command followed by the comport of the DBV400 to reset the device. Will be set to idle after reset is complete"
+        print ""
 
     def print_all_player_station_status(self):
         pass
