@@ -48,9 +48,14 @@ class DragonMasterDeviceManager:
         draxElementList = DragonMasterSerialDevice.get_all_drax_comports()
         for element in draxElementList:
             if element != None and element.device != None:
-
                 if not self.manager_contains_drax_device(element.device):
                     self.add_device(DragonMasterSerialDevice.Draxboard(element.device))
+
+        #Get all connected DBV400 devices
+        for element in DragonMasterSerialDevice.get_all_dbv400_comports():
+            if element != None and element.device != None:
+                if not self.manager_contains_dbv_device(element.device):
+                    self.add_device(DragonMasterSerialDevice.DBV400(element.device))
 
 
         return
