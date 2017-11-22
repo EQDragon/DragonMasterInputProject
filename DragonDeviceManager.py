@@ -21,7 +21,16 @@ class DragonMasterDeviceManager:
 
         self.poll_search_devices()
 
+        self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
+        self.writePollingThread.daemon = False
+        self.writePollingThread.start()
 
+
+    def poll_write_to_input_text(self):
+
+        while True:
+
+            sleep(.016)#Wait 1/60 of a second
 
 
     """
