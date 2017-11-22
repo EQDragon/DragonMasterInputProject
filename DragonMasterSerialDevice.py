@@ -352,6 +352,7 @@ class DBV400(SerialDevice):
         print(read.encode('hex'))
     ######################Start If Statements#############################
         if len(read) >= 11:
+            err = str(read[8])
             if read[8].encode('hex') == '55' and read[9].encode('hex') == '53' and read.encode('hex') == '44':
                 denomination = int(read[11])
                 write_serial_device(self,self.ESCROW_ACK)
@@ -374,8 +375,7 @@ class DBV400(SerialDevice):
                 write_serial_device(self,self.IDLE_ACK)
                 sleep(.2)
                 read = write_serial_device_wait_for_read(self,self.STATUS_REQUEST,1,200)
-            elif (len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11' and err.find(
-                    "7") != -1):
+            elif (len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11' and err.find("7") != -1):
                 print('DBV BILL REJECT')
                 self.BILL_REJECT[5] = read[5]
                 read = write_serial_device_wait_for_read(self, self.BILL_REJECT, 1, 200)
