@@ -52,12 +52,19 @@ class DragonMasterDeviceManager:
                 command = inputLineComponents[0]
 
                 if command == 'status':
+
                     pass
                 elif command == 'reset':
+                    if len(inputLineComponents) >= 2:
+                        self.debug_reset_dbv(inputLineComponents[1])
                     pass
                 elif command == 'idle':
+                    if len(inputLineComponents) >= 2:
+                        self.debug_idle_dbv(inputLineComponents[1])
                     pass
                 elif command == 'inhibit':
+                    if len(inputLineComponents) >= 2:
+                        self.debug_inhibit_dbv(inputLineComponents[1])
                     pass
         return
 
