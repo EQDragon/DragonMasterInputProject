@@ -5,6 +5,7 @@ import Queue
 import pygame
 import syslog
 import os
+import pyudev
 
 
 
@@ -19,6 +20,7 @@ class DragonMasterDeviceManager:
         self.eventQueue = Queue.Queue()
         self.deviceList = []
         self.deviceDictionary = {}
+        self.deviceContext = None
 
 
         #Thread for writing to text file
@@ -88,6 +90,7 @@ class DragonMasterDeviceManager:
 
     def poll_devices(self):
         while True:
+            self.deviceContext = pyudev.Context() #Want to reinitialize the context of the system at every update
             self.search_devices()
             sleep(2)
 
@@ -127,13 +130,13 @@ class DragonMasterDeviceManager:
         for element in draxElementList:
             if element != None and element.device != None:
                 if not self.manager_contains_drax_device(element.device):
-                    self.add_device(DragonMasterSerialDevice.Draxboard(element.device))
+                    self.add_device(DragonMasterSerialDevice.Draxboard(deviceManager=self, deviceName=element.name, comport=element.device))
 
         #Get all connected DBV400 devices
         for element in DragonMasterSerialDevice.get_all_dbv400_comports():
             if element != None and element.device != None:
                 if not self.manager_contains_dbv_device(element.device):
-                    self.add_device(DragonMasterSerialDevice.DBV400(element.device))
+                    self.add_device(DragonMasterSerialDevice.DBV400(deviceManager=self, deviceName=element.name, comport=element.device))
 
 
         return

@@ -145,9 +145,15 @@ Polls a serial thread to check if at any point there is something to read from a
 """
 def poll_serial_thread(dragonMasterSerialDevice):
     serialDevice = dragonMasterSerialDevice.serialDevice
-    while True:
-        if serialDevice.in_waiting > 1:
-            dragonMasterSerialDevice.on_data_received_event()
+    deviceRunning = True
+    while deviceRunning:
+        try:
+
+            if serialDevice.in_waiting > 1:
+                dragonMasterSerialDevice.on_data_received_event()
+        except:
+            print "There was an error polling device " + dragonMasterSerialDevice.to_string()
+            deviceRunning = False
 
 
 
@@ -218,12 +224,15 @@ comport
 class SerialDevice:
     
 
-    def __init__(self, comport, baudrate = 9600):
+    def __init__(self, deviceManager, deviceName, comport, baudrate = 9600):
         self.baudrate = baudrate
         self.blockReadEvent = False
         self.deviceFailedStart = False
         self.comport = comport
         self.serialDevice = None
+        self.deviceName = deviceName
+        self.deviceManager = deviceManager
+        return
         
 
 
@@ -271,8 +280,9 @@ class Draxboard(SerialDevice):
 
 
 
-    def __init__(self, comport):
-        SerialDevice.__init__(self, comport, baudrate=115200)
+    def __init__(self, deviceManager, deviceName, comport):
+        SerialDevice.__init__(self, deviceManager, deviceName, comport, baudrate=115200)
+        self.set_parent_path()
         
         
 
@@ -291,6 +301,15 @@ class Draxboard(SerialDevice):
             tempLine = readLine[i*readBlockSize:((i+1)*readBlockSize)]
             if (tempLine[0].encode('hex') == 'fa' and len(tempLine) >= 3):
                 self.add_input_event_to_device_manager(tempLine[self.INPUT_BYTE_INDEX].encode('hex'))
+        return
+
+    def set_parent_path(self):
+
+        for dev in self.deviceManager.deviceContext.list_devices():
+            if self.deviceName in dev.device_path.decode('utf-8'):
+                print dev.parent.parent.device_path
+
+        return
                 
 
     def add_input_event_to_device_manager(self, inputByte):
@@ -354,9 +373,9 @@ class DBV400(SerialDevice):
     #UID (ARBITRARY)
     UID = 0x42
     
-    def __init__(self, comport):
+    def __init__(self, deviceManager, deviceName, comport):
         self.STATE = self.NOT_INIT_STATE
-        SerialDevice.__init__(self, comport, baudrate=9600)
+        SerialDevice.__init__(self,deviceManager, deviceName, comport, baudrate=9600)
 
     def on_data_received_event(self):
       #print('PASS REC = ', +self.PASSIVE_RECEIVE)
