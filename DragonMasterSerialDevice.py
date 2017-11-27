@@ -110,7 +110,7 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
             dragonMasterSerialDevice.blockReadEvent = False
             return readLine
         sleep(.001)
-    print (dragonMasterSerialDevice.to_string() + " Timed Out")
+    print (dragonMasterSerialDevice.to_string() + " timed out!")
 
 
 """
@@ -152,7 +152,7 @@ def poll_serial_thread(dragonMasterSerialDevice):
             if serialDevice.in_waiting > 1:
                 dragonMasterSerialDevice.on_data_received_event()
         except:
-            print "There was an error polling device " + dragonMasterSerialDevice.to_string()
+            print ("There was an error polling device " + dragonMasterSerialDevice.to_string())
             deviceRunning = False
 
 
@@ -307,7 +307,7 @@ class Draxboard(SerialDevice):
 
         for dev in self.deviceManager.deviceContext.list_devices():
             if self.deviceName in dev.device_path.decode('utf-8'):
-                print dev.parent.parent.device_path
+                print (dev.parent.parent.device_path)
 
         return
                 
@@ -512,6 +512,9 @@ class DBV400(SerialDevice):
         self.PASSIVE_RECEIVE = 1
         return
 
+    """
+    Initializes a DBV at start-up
+    """
     def start_dbv(self):
         self.PASSIVE_RECEIVE = 0
         self.INIT = 1
@@ -552,9 +555,7 @@ class DBV400(SerialDevice):
         self.INIT = 0
         self.PASSIVE_RECEIVE = 1
         return
-
-
-
+        
     ###############################################################
 
     def set_uid(self):
@@ -573,7 +574,9 @@ class DBV400(SerialDevice):
         self.STATUS_REQUEST[3] = 0x10
 
 
-
+    """
+    Returns a string of the current state of the DBV-400 device
+    """
     def get_state(self):
         self.PASSIVE_RECEIVE = 0
         currentState = None
