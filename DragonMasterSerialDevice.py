@@ -2,6 +2,7 @@ from time import sleep
 import serial
 import serial.tools.list_ports
 import threading
+import DragonDeviceManager
 
 
 
@@ -221,11 +222,11 @@ def print_all_comport_info():
 Generic class for all serial devices. Creates an instance and opens a serial port for the proveided
 comport
 """
-class SerialDevice(DragonMasterDevice):
+class SerialDevice(DragonDeviceManager.DragonMasterDeviceManager):
     
 
     def __init__(self, deviceManager, deviceName, comport, baudrate = 9600):
-        DragonMasterDevice.__init__(self)
+        DragonDeviceManager.DragonMasterDevice.__init__(self)
         self.baudrate = baudrate
         self.blockReadEvent = False
         self.deviceFailedStart = False
@@ -344,7 +345,7 @@ class Draxboard(SerialDevice):
                 inputByteString += '1'
             else:
                 inputByteString += '0'
-        print ('DRAX|' + inputByteString + '|')
+        print ('DRAX|' + inputByteString + '|' + self.parentPath)
 
 
 
