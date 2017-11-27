@@ -370,12 +370,6 @@ class Draxboard(SerialDevice):
 
 
 
-
-
-
-
-
-
 #===============================================================================================================================================
 class DBV400(SerialDevice):
     #Variables used for blocking data received events
@@ -492,6 +486,13 @@ class DBV400(SerialDevice):
 
     def to_string(self):
         return "DBV-400(" + self.comport + ")"
+
+    def set_parent_path(self):
+        for dev in self.deviceManager.deviceContext.list_devices():
+            if self.deviceName in dev.device_path.decode('utf-8'):
+                print (dev.parent.device_path)
+
+        return 
 
     ######################DBV Commands#############################
     """
