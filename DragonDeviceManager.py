@@ -99,7 +99,7 @@ class DragonMasterDeviceManager:
 
 
 
-    #############################################################################
+    #############################################################################################################################################
 
 
     """
@@ -182,7 +182,7 @@ class DragonMasterDeviceManager:
     """
     def poll_malfunctioned_devices(self):
         for dragonMasterDevice in self.deviceList:
-            if dragonMasterDevice:
+            if dragonMasterDevice.has_device_errored():
                 pass
 
         return
@@ -393,6 +393,12 @@ class DragonMasterDevice:
     def disconnect_device(self):
         pass
 
+    """
+    Use this method to poll the device and make sure that it has not disconnected or errored
+    """
+    def has_device_errored(self):
+        return False
+
 
 """
 An instance of DragonMasterDevice that handles all the functionality of the joystick devices that are plugged into the player station
@@ -419,6 +425,7 @@ class JoystickDevice(DragonMasterDevice):
 
     def start_device(self):
         try:
+
             self.pygameJoystick.init()
         except:
             return False
@@ -446,6 +453,9 @@ class JoystickDevice(DragonMasterDevice):
             return (x, y)
         except:
             return None
+
+    def has_device_errored(self):
+        return False
 
         
 

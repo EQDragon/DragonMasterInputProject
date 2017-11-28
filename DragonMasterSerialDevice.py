@@ -272,9 +272,9 @@ class SerialDevice(DragonDeviceManager.DragonMasterDevice):
     def to_string(self):
         return "SerialDevice (" + self.comport + ")"
 
-    def is_device_connected(self):
+    def has_device_errored(self):
         try:
-            return self.serialDevice.is_open
+            return not self.serialDevice.is_open or not self.pollDeviceForEvent
         except:
             return False
 
@@ -310,7 +310,7 @@ class Draxboard(SerialDevice):
     def __init__(self, deviceManager, deviceName, comport):
         SerialDevice.__init__(self, deviceManager, deviceName, comport, baudrate=115200)
         
-        
+    ########################INHERITED METHODS################################################
     """
     In the context of the Drax board, a data received event will primarily be used to collect
     the current status of all the buttons on the board. Any time a button is pressed or released,
@@ -343,7 +343,19 @@ class Draxboard(SerialDevice):
                 #print self.parentPath
                 return
         return
-                
+
+    """
+    Starts an instanc of Draxboard by sending a request to the board and awaiting a response. 
+    """
+    def start_device(self):
+        SerialDevice.start_device(self)
+        if write_serial_device_wait_for_read(self, self.REQUEST_STATUS) == None:
+            self.deviceFailedStart = True
+            return False
+        return True
+
+
+    ##############################################################################################################    
     """
     Whenever an event is called we want to send it to the Device Manager to print out the current state of the board,
     which can later be written into a text format for other programs to interpret
@@ -363,15 +375,7 @@ class Draxboard(SerialDevice):
     def to_string(self):
         return "Draxboard (" + self.comport + ")"
 
-    """
-    Starts an instanc of Draxboard by sending a request to the board and awaiting a response. 
-    """
-    def start_device(self):
-        SerialDevice.start_device(self)
-        if write_serial_device_wait_for_read(self, self.REQUEST_STATUS) == None:
-            self.deviceFailedStart = True
-            return False
-        return True
+    
 
     def increment_meter(self, amountToIncrement, isInMeter):
         if isInMeter:
