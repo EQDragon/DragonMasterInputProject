@@ -323,8 +323,28 @@ class DragonMasterDevice:
 
 class JoystickDevice(DragonMasterDevice):
 
-    def __init__(self):
+    def __init__(self, pygameJoystick):
         DragonMasterDevice.__init__(self)
+        self.pygameJoystick = pygameJoystick
+        self.joystickID = self.pygameJoystick.get_id()
+
+    """
+    Returns a Tuple instance in the format (X-axis, Y-axis) that indicates the current state of the
+    joystick. If there is an error reading the joystick, the method will return None
+    """
+    def get_joystick_axes(self):
+        try:
+            x = self.pygameJoystick.get_axis(0)
+            y = self.pygameJoystick.get_axis(1)
+
+            return (x, y)
+        except:
+            return None
+
+    def set_parent_device_path(self):
+        return
+
+
         
 
 

@@ -29,7 +29,7 @@ for j in joystickList:
 	j.init()
 	for dev in dragonMasterDeviceManager.deviceContext.list_devices():
 		if ("js" + str(j.get_id() + 1)) == dev.sys_name:
-			devicePathList[j.get_id()] = (dev.parent.parent.parent.parent.device_path)
+			devicePathList[j.get_id()] = dev.parent.parent.parent.parent.device_path
 
 
 
@@ -39,8 +39,11 @@ while 1:
 	#pygame.joystick.quit()
 	#pygame.joystick.init()
 	pygame.event.pump()
+	print pygame.joystick.get_count()
 	for i in range(len(joystickList)):
-		print devicePathList[i] + ":  X-" + str(joystickList[i].get_axis(0))
+
+		if devicePathList[i] != None:
+			print devicePathList[i] + ":  X-" + str(joystickList[i].get_axis(0))
 
 	sleep(1)
 	pass
