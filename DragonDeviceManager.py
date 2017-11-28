@@ -314,20 +314,49 @@ organizing all the devices to each player station
 """
 class DragonMasterDevice:
 
-    def __init__(self):
+    def __init__(self, deviceManager):
+        self.deviceManager = deviceManager
         self.parentPath = self.get_parent_device_path()
 
-    def get_parent_device_path(self):
+    """
+    This method will be called by the DragonDeviceManager class itself to detect if there were any errors upon starting
+    up the device. Returns True if the device starts normally. False if there was an error initializing it
+    """
+    def start_device(self):
+        return False#Returns False by default, because you should not be using this class's start_device method
+
+    """
+    Upon instantiating this device, set parent device path will be called to find the directory of the parent device
+    Normally will be the last method called in the __init__ method, so you have time to set necessary variables before
+    finding the parent
+    """
+    def set_parent_device_path(self):
         pass
 
 
+"""
+An instance of DragonMasterDevice that handles all the functionality of the joystick devices that are plugged into the player station
+"""
 class JoystickDevice(DragonMasterDevice):
 
     def __init__(self, pygameJoystick):
-        DragonMasterDevice.__init__(self)
         self.pygameJoystick = pygameJoystick
         self.joystickID = self.pygameJoystick.get_id()
+        DragonMasterDevice.__init__(self)
 
+
+    ####################Inherited Functions######################### 
+
+    """
+    Sets the parent device path 
+    """
+    def set_parent_device_path(self):
+        for dev in self.deviceManager.deviceContext.list_devices():
+            if dev.sys_name == ("js" + str(self.joystickID)):
+                self.parentPath = dev.parent.parent.parent.parent.parent.device_path#So many parents!
+                return
+        return
+    ################################################################
     """
     Returns a Tuple instance in the format (X-axis, Y-axis) that indicates the current state of the
     joystick. If there is an error reading the joystick, the method will return None
@@ -340,10 +369,6 @@ class JoystickDevice(DragonMasterDevice):
             return (x, y)
         except:
             return None
-
-    def set_parent_device_path(self):
-        return
-
 
         
 

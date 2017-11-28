@@ -226,7 +226,6 @@ class SerialDevice(DragonDeviceManager.DragonMasterDevice):
     
 
     def __init__(self, deviceManager, deviceName, comport, baudrate = 9600):
-        DragonDeviceManager.DragonMasterDevice.__init__(self)
         self.baudrate = baudrate
         self.blockReadEvent = False
         self.deviceFailedStart = False
@@ -234,6 +233,7 @@ class SerialDevice(DragonDeviceManager.DragonMasterDevice):
         self.serialDevice = None
         self.deviceName = deviceName
         self.deviceManager = deviceManager
+        DragonDeviceManager.DragonMasterDevice.__init__(self, deviceManager)
         return
         
 
@@ -296,7 +296,6 @@ class Draxboard(SerialDevice):
 
     def __init__(self, deviceManager, deviceName, comport):
         SerialDevice.__init__(self, deviceManager, deviceName, comport, baudrate=115200)
-        self.set_parent_path()
         
         
     """

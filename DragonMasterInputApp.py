@@ -29,7 +29,7 @@ for j in joystickList:
 	j.init()
 	for dev in dragonMasterDeviceManager.deviceContext.list_devices():
 		if ("js" + str(j.get_id() + 1)) == dev.sys_name:
-			devicePathList[j.get_id()] = dev.parent.parent.parent.parent.device_path
+			devicePathList[j.get_id()] = dev.parent.parent.parent.parent.parent.device_path
 
 
 
