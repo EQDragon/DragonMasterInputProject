@@ -151,13 +151,12 @@ def poll_serial_thread(dragonMasterSerialDevice):
     serialDevice = dragonMasterSerialDevice.serialDevice
 
     while dragonMasterSerialDevice.pollDeviceForEvent:
-        try:
-
-            if serialDevice.in_waiting > 1:
-                dragonMasterSerialDevice.on_data_received_event()
-        except:
-            print ("There was an error polling device " + dragonMasterSerialDevice.to_string())
-            dragonMasterSerialDevice.pollDeviceForEvent = False #Thread will end if there is an error polling for a device
+        #try:
+        if serialDevice.in_waiting > 1:
+            dragonMasterSerialDevice.on_data_received_event()
+        #except:
+        #    print ("There was an error polling device " + dragonMasterSerialDevice.to_string())
+        #    dragonMasterSerialDevice.pollDeviceForEvent = False #Thread will end if there is an error polling for a device
     print dragonMasterSerialDevice.to_string() + " no longer polling for events"#Just want this for testing. want to remove later
 
 
@@ -266,7 +265,7 @@ class SerialDevice(DragonDeviceManager.DragonMasterDevice):
     This method should be used to obtain the path to the parent device. Ideally this will point to the USB hub that all devices
     for a player station will be connected to
     """
-    def set_parent_path(self):
+    def set_parent_device_path(self):
         pass
         
         
@@ -337,10 +336,11 @@ class Draxboard(SerialDevice):
     """
     In the context of the Drax board, we much traverse two layers down to reach the USB hub that the board is connected to.
     """
-    def set_parent_path(self):
-
+    def set_parent_device_path(self):
+        print self.deviceName
         for dev in self.deviceManager.deviceContext.list_devices():
             if self.deviceName in dev.device_path.decode('utf-8'):
+                print self.deviceName
                 self.parentPath = dev.parent.parent.parent.device_path
                 return
         return
@@ -358,6 +358,7 @@ class Draxboard(SerialDevice):
                 inputByteString += '1'
             else:
                 inputByteString += '0'
+
         print ('DRAX|' + inputByteString + '|' + self.parentPath)
 
     def to_string(self):
@@ -501,7 +502,7 @@ class DBV400(SerialDevice):
     def to_string(self):
         return "DBV-400(" + self.comport + ")"
 
-    def set_parent_path(self):
+    def set_parent_device_path(self):
         for dev in self.deviceManager.deviceContext.list_devices():
             if self.deviceName in dev.device_path.decode('utf-8'):
                 self.parentPath = dev.parent.parent.device_path
