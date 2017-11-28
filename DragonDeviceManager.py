@@ -124,6 +124,9 @@ class DragonMasterDeviceManager:
     """
     def search_devices(self):
         #Get All Drax Devices
+        previousDeviceCount = len(self.deviceList)
+
+
         DragonMasterSerialDevice.get_all_drax_comports()
         for element in DragonMasterSerialDevice.get_all_drax_comports():
             if element != None and element.device != None:
@@ -138,9 +141,11 @@ class DragonMasterDeviceManager:
 
         for joystick in get_all_joystick_devices():
             if joystick != None and not self.manager_contains_joystick(joystick.get_id()):
-                pass
+                self.add_device(JoystickDevice(deviceManager=self, pygameJoystick=joystick))
 
-
+        if (previousDeviceCount != len(self.deviceList)):
+            print "Total Devices: " + str(len(self.deviceList))
+            
         return
 
     """
@@ -160,7 +165,7 @@ class DragonMasterDeviceManager:
 
         for dev in self.deviceList:
             if isinstance(dev, JoystickDevice):
-                if dev.joystick.get_id() == joystickID:
+                if dev.pygameJoystick.get_id() == joystickID:
                     return True
         return False
 
@@ -316,7 +321,7 @@ class DragonMasterDevice:
 
     def __init__(self, deviceManager):
         self.deviceManager = deviceManager
-        self.parentPath = self.get_parent_device_path()
+        self.parentPath = self.set_parent_device_path()
 
     """
     This method will be called by the DragonDeviceManager class itself to detect if there were any errors upon starting
@@ -333,16 +338,23 @@ class DragonMasterDevice:
     def set_parent_device_path(self):
         pass
 
+    """
+    This method will be called whenever a device is removed from the DeviceManager. Do any clean up
+    that is necessary for this specific device here
+    """
+    def disconnect_device(self):
+        pass
+
 
 """
 An instance of DragonMasterDevice that handles all the functionality of the joystick devices that are plugged into the player station
 """
 class JoystickDevice(DragonMasterDevice):
 
-    def __init__(self, pygameJoystick):
+    def __init__(self, deviceManager, pygameJoystick):
         self.pygameJoystick = pygameJoystick
         self.joystickID = self.pygameJoystick.get_id()
-        DragonMasterDevice.__init__(self)
+        DragonMasterDevice.__init__(self, deviceManager=deviceManager)
 
 
     ####################Inherited Functions######################### 
@@ -364,6 +376,14 @@ class JoystickDevice(DragonMasterDevice):
             return False
         return True
 
+    def disconnect_device(self):
+        try:
+            self.pygameJoystick.quit()
+        except:
+            print "There was an error disonnecting " + self.to_string()
+
+    def to_string(self):
+        return "Joystick ID: " + str(self.joystickID)
 
     ################################################################
     """

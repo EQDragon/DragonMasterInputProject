@@ -150,14 +150,14 @@ Polls a serial thread to check if at any point there is something to read from a
 def poll_serial_thread(dragonMasterSerialDevice):
     serialDevice = dragonMasterSerialDevice.serialDevice
 
-    while serialDevice.pollDeviceForEvent:
+    while dragonMasterSerialDevice.pollDeviceForEvent:
         try:
 
             if serialDevice.in_waiting > 1:
                 dragonMasterSerialDevice.on_data_received_event()
         except:
             print ("There was an error polling device " + dragonMasterSerialDevice.to_string())
-            serialDevice.pollDeviceForEvent = False #Thread will end if there is an error polling for a device
+            dragonMasterSerialDevice.pollDeviceForEvent = False #Thread will end if there is an error polling for a device
     print dragonMasterSerialDevice.to_string() + " no longer polling for events"#Just want this for testing. want to remove later
 
 
