@@ -566,7 +566,7 @@ class DBV400(SerialDevice):
             return currentState
         if (len(inputBytes) >= 7 and inputBytes[8].encode('hex') == 'e4' and len(inputBytes) > 8):
             currentState = self.POWER_UP_NACK_STATE
-        elif (inputBytes[1].encode('hex') == '0a'):
+        elif (len(inputBytes) >= 1 and inputBytes[1].encode('hex') == '0a'):
             currentState = self.POWER_UP_NACK_STATE
         elif (len(inputBytes) > 13 and inputBytes[11].encode('hex') == '00' and inputBytes[12].encode(
                 'hex') == '01' and inputBytes[13].encode('hex') == '00'):
