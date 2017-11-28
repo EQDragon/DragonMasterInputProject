@@ -222,7 +222,7 @@ def print_all_comport_info():
 Generic class for all serial devices. Creates an instance and opens a serial port for the proveided
 comport
 """
-class SerialDevice(DragonDeviceManager.DragonMasterDeviceManager):
+class SerialDevice(DragonDeviceManager.DragonMasterDevice):
     
 
     def __init__(self, deviceManager, deviceName, comport, baudrate = 9600):

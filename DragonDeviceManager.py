@@ -9,7 +9,6 @@ import pyudev
 
 
 
-
 class DragonMasterDeviceManager:
 
     DRAGON_DEVICE_INPUT_TEXT_FILE = "DragonMasterInput.txt"
@@ -20,7 +19,7 @@ class DragonMasterDeviceManager:
         self.eventQueue = Queue.Queue()
         self.deviceList = []
         self.deviceDictionary = {}
-        self.deviceContext = None
+        self.deviceContext = pyudev.Context()
 
 
         #Thread for writing to text file
@@ -37,8 +36,7 @@ class DragonMasterDeviceManager:
         self.pollDeviceThread = threading.Thread(target=self.poll_devices)
         self.pollDeviceThread.daemon = True
         self.pollDeviceThread.start()
-
-
+        return
 
 
     ######################THREADED METHODS#######################################
@@ -126,8 +124,8 @@ class DragonMasterDeviceManager:
     """
     def search_devices(self):
         #Get All Drax Devices
-        draxElementList = DragonMasterSerialDevice.get_all_drax_comports()
-        for element in draxElementList:
+        DragonMasterSerialDevice.get_all_drax_comports()
+        for element in DragonMasterSerialDevice.get_all_drax_comports():
             if element != None and element.device != None:
                 if not self.manager_contains_drax_device(element.device):
                     self.add_device(DragonMasterSerialDevice.Draxboard(deviceManager=self, deviceName=element.name, comport=element.device))
@@ -137,6 +135,10 @@ class DragonMasterDeviceManager:
             if element != None and element.device != None:
                 if not self.manager_contains_dbv_device(element.device):
                     self.add_device(DragonMasterSerialDevice.DBV400(deviceManager=self, deviceName=element.name, comport=element.device))
+
+        for joystick in get_all_joystick_devices():
+            if joystick != None and not self.manager_contains_joystick(joystick.get_id()):
+                pass
 
 
         return
@@ -153,6 +155,15 @@ class DragonMasterDeviceManager:
         return
 
     #############Contains Methods############################################
+
+    def manager_contains_joystick(self, joystickID):
+
+        for dev in self.deviceList:
+            if isinstance(dev, JoystickDevice):
+                if dev.joystick.get_id() == joystickID:
+                    return True
+        return False
+
 
     """
     Use this method to check that the Draxboard Device that is being checked does not already exist in
@@ -334,24 +345,16 @@ class PlayerStation:
 
 ###############Device Search Methods###########################
 def get_all_joystick_devices():
+    JOYSTICK_DEVICE_NAME = "Ultimarc UltraStik Ultimarc Ultra-Stik Player 1"
+    joystickList = []
+    for j in range(pygame.joystick.get_count()):
 
+        jStick = pygame.joystick.Joystick(j)
 
-    for i in range (pygame.joystick.get_count()):
-        joystick = pygame.joystick.Joystick(i)
-        joystick.init()
-        while 1:
-            for event in pygame.event.get():
-                print event
-                pass
-            #print "x: " + str(round(joystick.get_axis(0), 2)) + " y: {} " + str(round(joystick.get_axis(1), 2))
+        if jStick.get_name() == JOYSTICK_DEVICE_NAME:
+            joystickList.append(jStick)
 
-
-            sleep(.01)
-
-
-
-
-    return
+    return joystickList
 ##############################################################
 
 
