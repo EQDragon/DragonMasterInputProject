@@ -348,7 +348,7 @@ class JoystickDevice(DragonMasterDevice):
     ####################Inherited Functions######################### 
 
     """
-    Sets the parent device path 
+    See DragonMasterDevice for details
     """
     def set_parent_device_path(self):
         for dev in self.deviceManager.deviceContext.list_devices():
@@ -356,6 +356,15 @@ class JoystickDevice(DragonMasterDevice):
                 self.parentPath = dev.parent.parent.parent.parent.parent.device_path#So many parents!
                 return
         return
+
+    def start_device(self):
+        try:
+            self.pygameJoystick.init()
+        except:
+            return False
+        return True
+
+
     ################################################################
     """
     Returns a Tuple instance in the format (X-axis, Y-axis) that indicates the current state of the
