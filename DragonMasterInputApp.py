@@ -9,8 +9,8 @@ context = pyudev.Context
 
 
 #It is important to initialize pygame before we use it
-pygame.init()
-pygame.joystick.init()
+#pygame.init()
+
 
 #for dev in pyudev.Context().list_devices():
 	#print dev#dev.device_path.decode('utf-8')

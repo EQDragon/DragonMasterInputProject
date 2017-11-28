@@ -22,6 +22,8 @@ class DragonMasterDeviceManager:
         self.deviceContext = pyudev.Context()
 
 
+
+
         #Thread for writing to text file
         self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
         self.writePollingThread.daemon = True
@@ -89,6 +91,9 @@ class DragonMasterDeviceManager:
     def poll_devices(self):
         while True:
             self.deviceContext = pyudev.Context() #Want to reinitialize the context of the system at every update
+            if not pygame.joystick.get_init():
+                self.initialize_all_joysticks()
+
             self.search_devices()
             sleep(2)
 
@@ -100,12 +105,37 @@ class DragonMasterDeviceManager:
     """
     Use this method to add a new device to the list of all connected 
     dragon master devices
+
+    Please be sure the device is not a duplicate before using this method.
+    This method assumes that the check has already been made. It will overwrite the device in 
+    a device dictionary method with the new one that is current being added
     """
     def add_device(self, dragonMasterDevice):
         if dragonMasterDevice == None:
             return#Don't add a device if it is null
-        self.deviceList.append(dragonMasterDevice)
-        dragonMasterDevice.start_device()
+        
+        if dragonMasterDevice.start_device():
+            self.deviceList.append(dragonMasterDevice)
+
+            if not self.deviceDictionary.has_key(dragonMasterDevice.parentPath):
+                pStation = PlayerStation(parentDevicePathKey=dragonMasterDevice.parentPath)
+                self.deviceDictionary[dragonMasterDevice.parentPath] = pStation
+
+
+            if isinstance(dragonMasterDevice, DragonMasterSerialDevice.Draxboard):
+                self.deviceDictionary[dragonMasterDevice.parentPath].draxboardDevice = dragonMasterDevice
+                pass
+            elif isinstance(dragonMasterDevice, DragonMasterSerialDevice.DBV400):
+                self.deviceDictionary[dragonMasterDevice.parentPath].dbvDevice = dragonMasterDevice
+                pass
+            elif isinstance(dragonMasterDevice, JoystickDevice):
+                self.deviceDictionary[dragonMasterDevice.parentPath].joystickDevice = dragonMasterDevice
+                pass
+
+        else:
+            print dragonMasterDevice.to_string() + " failed start~"
+            return
+
         print dragonMasterDevice.to_string() + " has been added!"
 
     """
@@ -139,11 +169,9 @@ class DragonMasterDeviceManager:
                 if not self.manager_contains_dbv_device(element.device):
                     self.add_device(DragonMasterSerialDevice.DBV400(deviceManager=self, deviceName=element.name, comport=element.device))
 
-        for joystick in get_all_joystick_devices():
-            if joystick != None and not self.manager_contains_joystick(joystick.get_id()):
-                self.add_device(JoystickDevice(deviceManager=self, pygameJoystick=joystick))
+        
 
-        if (previousDeviceCount != len(self.deviceList)):
+        if (previousDeviceCount != len(self.deviceList)):#This if statement is only used to display if a device was added or removed
             print "Total Devices: " + str(len(self.deviceList))
             
         return
@@ -159,8 +187,25 @@ class DragonMasterDeviceManager:
 
         return
 
+    """
+    Due to the fact that if a controller disconnects it may change the order they are displayed in pyudev,
+    it is necessary to reinitialize all controllers in their new current order and restart pygame
+    """
+    def initialize_all_joysticks(self):
+        pygame.joystick.quit()
+        pygame.joystick.init()
+
+        for joystick in get_all_joystick_devices():
+            if joystick != None and not self.manager_contains_joystick(joystick.get_id()):
+                self.add_device(JoystickDevice(deviceManager=self, pygameJoystick=joystick))
+
+
+
     #############Contains Methods############################################
 
+    """
+    Use this method to check that the this joystickID is not already contained within
+    """
     def manager_contains_joystick(self, joystickID):
 
         for dev in self.deviceList:
@@ -185,7 +230,7 @@ class DragonMasterDeviceManager:
                     return True
 
                     
-        for playerStation in self.deviceDictionary.items():
+        for key, playerStation in self.deviceDictionary.items():
             if playerStation != None and playerStation.draxboardDevice != None:
                 if playerStation.draxboardDevice.comport == draxDeviceComport:
                     return True
