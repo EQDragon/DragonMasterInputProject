@@ -349,7 +349,7 @@ class Draxboard(SerialDevice):
     which can later be written into a text format for other programs to interpret
     """
     def add_input_event_to_device_manager(self, inputByte):
-        
+
         inputByteInt = int(inputByte, 16)#inputByte is passed as a hex string. Need to convert to int value.
 
         inputByteString = ''

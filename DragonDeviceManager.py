@@ -263,11 +263,14 @@ class DragonMasterDeviceManager:
     Use this method to make sure that the device manager does not already contain an instance of the joystick that
     is currently trying to be added. If there is a duplicate the method will return True.
 
-    TODO: Figure out what parameter to pass in
+    Make sure that the parameter being passed in is a pygame joystick object. This will be compared to other pygame joystick objects
     """
     def manager_contains_joystick_device(self, joystickDevice):
-
-        return
+        for key, playerStation in self.deviceDictionary.items:
+            if playerStation != None and playerStation.joystickDevice != None:
+                if playerStation.joystickDevice.pygameJoystick.get_id() == joystickDevice.get_id():
+                    return True
+        return False
 
 
     ########################################################################
