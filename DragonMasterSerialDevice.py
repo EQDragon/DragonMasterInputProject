@@ -327,8 +327,8 @@ class Draxboard(SerialDevice):
 
         for dev in self.deviceManager.deviceContext.list_devices():
             if self.deviceName in dev.device_path.decode('utf-8'):
-                print (dev.parent.parent.device_path)
-
+                self.parentPath = dev.parent.parent.parent.device_path
+                return
         return
                 
     """
@@ -491,7 +491,8 @@ class DBV400(SerialDevice):
     def set_parent_path(self):
         for dev in self.deviceManager.deviceContext.list_devices():
             if self.deviceName in dev.device_path.decode('utf-8'):
-                print (dev.parent.device_path)
+                self.parentPath = dev.parent.parent.device_path
+                return;
 
         return 
 
