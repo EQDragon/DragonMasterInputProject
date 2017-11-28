@@ -337,11 +337,10 @@ class Draxboard(SerialDevice):
     In the context of the Drax board, we much traverse two layers down to reach the USB hub that the board is connected to.
     """
     def set_parent_device_path(self):
-        print self.deviceName
         for dev in self.deviceManager.deviceContext.list_devices():
             if self.deviceName in dev.device_path.decode('utf-8'):
-                print self.deviceName
-                self.parentPath = dev.parent.parent.parent.device_path
+                self.parentPath = dev.parent.parent.parent.device_path.decode('utf-8')
+                print self.parentPath
                 return
         return
                 
@@ -350,6 +349,7 @@ class Draxboard(SerialDevice):
     which can later be written into a text format for other programs to interpret
     """
     def add_input_event_to_device_manager(self, inputByte):
+        
         inputByteInt = int(inputByte, 16)#inputByte is passed as a hex string. Need to convert to int value.
 
         inputByteString = ''
@@ -358,7 +358,6 @@ class Draxboard(SerialDevice):
                 inputByteString += '1'
             else:
                 inputByteString += '0'
-
         print ('DRAX|' + inputByteString + '|' + self.parentPath)
 
     def to_string(self):

@@ -366,7 +366,7 @@ class DragonMasterDevice:
 
     def __init__(self, deviceManager):
         self.deviceManager = deviceManager
-        self.parentPath = self.set_parent_device_path()
+        self.set_parent_device_path()
 
     """
     This method will be called by the DragonDeviceManager class itself to detect if there were any errors upon starting
