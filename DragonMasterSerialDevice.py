@@ -2,6 +2,7 @@ from time import sleep
 import serial
 import serial.tools.list_ports
 import threading
+import DragonDeviceManager
 
 
 
@@ -25,7 +26,10 @@ def open_serial_device(comport, baudrate, readTimeout, writeTimeout):
         print ('There was an error opening port ' + comport + '. Please make sure you have provided the correct permissions')
         return None
 
-
+"""
+Safely closes a serial port provided. Make sure to pass a serial class in and NOT
+an instance of DragonMasterSerialDevice
+"""
 def close_serial_device(serialDevice):
     if (serialDevice == None):
         return
@@ -110,7 +114,7 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
             dragonMasterSerialDevice.blockReadEvent = False
             return readLine
         sleep(.001)
-    print (dragonMasterSerialDevice.to_string() + " Timed Out")
+    print (dragonMasterSerialDevice.to_string() + " timed out!")#If write serial device
 
 
 """
@@ -145,9 +149,15 @@ Polls a serial thread to check if at any point there is something to read from a
 """
 def poll_serial_thread(dragonMasterSerialDevice):
     serialDevice = dragonMasterSerialDevice.serialDevice
-    while True:
+
+    while dragonMasterSerialDevice.pollDeviceForEvent:
+        #try:
         if serialDevice.in_waiting > 1:
             dragonMasterSerialDevice.on_data_received_event()
+        #except:
+        #    print ("There was an error polling device " + dragonMasterSerialDevice.to_string())
+        #    dragonMasterSerialDevice.pollDeviceForEvent = False #Thread will end if there is an error polling for a device
+    print dragonMasterSerialDevice.to_string() + " no longer polling for events"#Just want this for testing. want to remove later
 
 
 
@@ -215,23 +225,32 @@ def print_all_comport_info():
 Generic class for all serial devices. Creates an instance and opens a serial port for the proveided
 comport
 """
-class SerialDevice:
+class SerialDevice(DragonDeviceManager.DragonMasterDevice):
     
 
-    def __init__(self, comport, baudrate = 9600):
+    def __init__(self, deviceManager, deviceName, comport, baudrate = 9600):
+        self.pollDeviceForEvent = True
         self.baudrate = baudrate
         self.blockReadEvent = False
         self.deviceFailedStart = False
         self.comport = comport
         self.serialDevice = None
+        self.deviceName = deviceName
+        self.deviceManager = deviceManager
+        DragonDeviceManager.DragonMasterDevice.__init__(self, deviceManager)
+        return
         
 
-
+    """
+    This method is called whenever there is bytes_waiting size greater than or equal to 1 byte. You may have to add aditional 
+    waits after that to make sure you are reading the entire byte array.
+    """
     def on_data_received_event(self):
         pass
 
     """
     Default start_device begins the polling for any read events that the serial device may trigger
+    This will always be called once when the device is first added to the list
     """
     def start_device(self):
         self.serialDevice = open_serial_device(comport=self.comport, baudrate=self.baudrate, readTimeout=3, writeTimeout=5)
@@ -239,18 +258,34 @@ class SerialDevice:
             self.deviceFailedStart = True
 
         readPollingThread = threading.Thread(target=poll_serial_thread, args=(self,))
-        readPollingThread.daemon = False
+        readPollingThread.daemon = True
         readPollingThread.start()
+
+    """
+    This method should be used to obtain the path to the parent device. Ideally this will point to the USB hub that all devices
+    for a player station will be connected to
+    """
+    def set_parent_device_path(self):
+        pass
         
         
     def to_string(self):
         return "SerialDevice (" + self.comport + ")"
 
-    def is_device_connected(self):
+    def has_device_errored(self):
         try:
-            return self.serialDevice.is_open
+            return not self.serialDevice.is_open or not self.pollDeviceForEvent
         except:
             return False
+
+    """
+    By default this will close the associted serial device as well as end the currenct thread that is running for
+    this particular device for events
+    """
+    def disconnect_serial_device(self):
+        close_serial_device(self.serialDevice)
+        self.pollDeviceForEvent = False
+        return
 
 #=====================================================================================================================================================
 """
@@ -264,6 +299,7 @@ class Draxboard(SerialDevice):
     READ_INPUTS = bytearray([0x03, 0x01, 0x01, 0x05])
     CLEAR_OUTPUTS = bytearray([0x04, 0x02, 0x05, 0x00, 0x00, 0x00, 0x00, 0x0B])
     OUTPUT_DISABLE = bytearray([0x07, 0x03, 0x05, 0xff, 0xff, 0xff, 0xff, 0x0B])
+    METER_INCREMENT = bytearray([0x09, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00])
 
     BYTE_SIZE = 8
     INPUT_BYTE_INDEX = 3
@@ -271,11 +307,15 @@ class Draxboard(SerialDevice):
 
 
 
-    def __init__(self, comport):
-        SerialDevice.__init__(self, comport, baudrate=115200)
+    def __init__(self, deviceManager, deviceName, comport):
+        SerialDevice.__init__(self, deviceManager, deviceName, comport, baudrate=115200)
         
-        
-
+    ########################INHERITED METHODS################################################
+    """
+    In the context of the Drax board, a data received event will primarily be used to collect
+    the current status of all the buttons on the board. Any time a button is pressed or released,
+    an event will be sent and this will read the current state of each button
+    """
     def on_data_received_event(self):
         #Make sure to block data received if you are writing and expecting a read after
 
@@ -291,9 +331,37 @@ class Draxboard(SerialDevice):
             tempLine = readLine[i*readBlockSize:((i+1)*readBlockSize)]
             if (tempLine[0].encode('hex') == 'fa' and len(tempLine) >= 3):
                 self.add_input_event_to_device_manager(tempLine[self.INPUT_BYTE_INDEX].encode('hex'))
-                
+        return
 
+    """
+    In the context of the Drax board, we much traverse two layers down to reach the USB hub that the board is connected to.
+    """
+    def set_parent_device_path(self):
+        for dev in self.deviceManager.deviceContext.list_devices():
+            if self.deviceName in dev.device_path.decode('utf-8'):
+                self.parentPath = dev.parent.parent.parent.device_path.decode('utf-8')
+                #print self.parentPath
+                return
+        return
+
+    """
+    Starts an instanc of Draxboard by sending a request to the board and awaiting a response. 
+    """
+    def start_device(self):
+        SerialDevice.start_device(self)
+        if write_serial_device_wait_for_read(self, self.REQUEST_STATUS) == None:
+            self.deviceFailedStart = True
+            return False
+        return True
+
+
+    ##############################################################################################################    
+    """
+    Whenever an event is called we want to send it to the Device Manager to print out the current state of the board,
+    which can later be written into a text format for other programs to interpret
+    """
     def add_input_event_to_device_manager(self, inputByte):
+
         inputByteInt = int(inputByte, 16)#inputByte is passed as a hex string. Need to convert to int value.
 
         inputByteString = ''
@@ -302,22 +370,29 @@ class Draxboard(SerialDevice):
                 inputByteString += '1'
             else:
                 inputByteString += '0'
-        print ('DRAX|' + inputByteString + '|')
-
-
+        print ('DRAX|' + inputByteString + '|' + self.parentPath)
 
     def to_string(self):
         return "Draxboard (" + self.comport + ")"
 
-    def start_device(self):
-        SerialDevice.start_device(self)
-        print write_serial_device_wait_for_read(self, self.REQUEST_STATUS)
+    
+
+    def increment_meter(self, amountToIncrement, isInMeter):
+        if isInMeter:
+            self.METER_INCREMENT[3] = 0x00
+        else:
+            self.METER_INCREMENT[3] = 0x01
+
+        if (amountToIncrement >> 8) == 0:
+            self.METER_INCREMENT[4] = amountToIncrement
+            self.METER_INCREMENT[6] = self.METER_INCREMENT[0] + self.METER_INCREMENT[1] + self.METER_INCREMENT[2] + self.METER_INCREMENT[3] +\
+                                      self.METER_INCREMENT[4] + self.METER_INCREMENT[5]
+            write_serial_device(self, self.METER_INCREMENT)
 
 
 
 #===============================================================================================================================================
 class DBV400(SerialDevice):
-    #Hello!!
     #Variables used for blocking data received events
     INIT = 1
     BUSY = 0
@@ -352,14 +427,14 @@ class DBV400(SerialDevice):
     #UID (ARBITRARY)
     UID = 0x42
     
-    def __init__(self, comport):
+    def __init__(self, deviceManager, deviceName, comport):
         self.STATE = self.NOT_INIT_STATE
-        SerialDevice.__init__(self, comport, baudrate=9600)
+        SerialDevice.__init__(self,deviceManager, deviceName, comport, baudrate=9600)
 
     def on_data_received_event(self):
       #print('PASS REC = ', +self.PASSIVE_RECEIVE)
-      if self.INIT == 0 and self.PASSIVE_RECEIVE == 1:
-        read = read_serial_device(self)
+        if self.INIT == 0 and self.PASSIVE_RECEIVE == 1:
+            read = read_serial_device(self)
     ######################Start If Statements#############################
         if len(read) >= 10 and read[8].encode('hex') == '55' and read[9].encode('hex') == '53' and read[10].encode('hex') == '44':
             denomination = bytearray(read[11])
@@ -401,28 +476,25 @@ class DBV400(SerialDevice):
             self.start_dbv()
             return
         if len(read) >= 7 and read[6].encode('hex') == '01' and read[7].encode('hex') == '12':
-          self.ERROR_ACK[5] = read[5]
-          self.ERROR_ACK[6] = read[6]
-          self.ERROR_ACK[7] = read[7]
-          write_serial_device(self, self.ERROR_ACK)
-          print('OP ERROR')
+            self.ERROR_ACK[5] = read[5]
+            self.ERROR_ACK[6] = read[6]
+            self.ERROR_ACK[7] = read[7]
+            write_serial_device(self, self.ERROR_ACK)
+            print('OP ERROR')
         if len(read) >= 7 and read[6].encode('hex') == '00' and read[7].encode('hex') == '12':
-          self.ERROR_ACK[5] = read[5]
-          self.ERROR_ACK[6] = read[6]
-          self.ERROR_ACK[7] = read[7]
-          write_serial_device(self, self.ERROR_ACK)
-          self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
-          self.RESET_REQUEST[4] = 0x01
-          self.INHIBIT_ACK[4] = 0x01
-          self.INHIBIT_REQUEST[4] = 0x01
-          self.IDLE_REQUEST[4] = 0x01
-          self.IDLE_ACK[4] = 0x01
-          self.SET_UID[8] = 0x01
-          self.start_dbv()
-          return
-
-
-
+            self.ERROR_ACK[5] = read[5]
+            self.ERROR_ACK[6] = read[6]
+            self.ERROR_ACK[7] = read[7]
+            write_serial_device(self, self.ERROR_ACK)
+            self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
+            self.RESET_REQUEST[4] = 0x01
+            self.INHIBIT_ACK[4] = 0x01
+            self.INHIBIT_REQUEST[4] = 0x01
+            self.IDLE_REQUEST[4] = 0x01
+            self.IDLE_ACK[4] = 0x01
+            self.SET_UID[8] = 0x01
+            self.start_dbv()
+            return
 
 
     def start_device(self):
@@ -432,6 +504,14 @@ class DBV400(SerialDevice):
 
     def to_string(self):
         return "DBV-400(" + self.comport + ")"
+
+    def set_parent_device_path(self):
+        for dev in self.deviceManager.deviceContext.list_devices():
+            if self.deviceName in dev.device_path.decode('utf-8'):
+                self.parentPath = dev.parent.parent.device_path
+                return;
+
+        return 
 
     ######################DBV Commands#############################
     """
@@ -491,6 +571,9 @@ class DBV400(SerialDevice):
         self.PASSIVE_RECEIVE = 1
         return
 
+    """
+    Initializes a DBV at start-up
+    """
     def start_dbv(self):
         self.PASSIVE_RECEIVE = 0
         self.INIT = 1
@@ -536,8 +619,6 @@ class DBV400(SerialDevice):
         self.PASSIVE_RECEIVE = 1
         return
 
-
-
     ###############################################################
 
     def set_uid(self):
@@ -556,7 +637,9 @@ class DBV400(SerialDevice):
         self.STATUS_REQUEST[3] = 0x10
 
 
-
+    """
+    Returns a string of the current state of the DBV-400 device
+    """
     def get_state(self):
         self.PASSIVE_RECEIVE = 0
         currentState = None
