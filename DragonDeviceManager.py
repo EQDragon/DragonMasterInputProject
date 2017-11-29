@@ -6,8 +6,7 @@ import pygame
 import syslog
 import os
 import pyudev
-
-
+import cups
 
 class DragonMasterDeviceManager:
 
@@ -410,6 +409,7 @@ class JoystickDevice(DragonMasterDevice):
         self.pygameJoystick = pygameJoystick
         self.joystickID = self.pygameJoystick.get_id()
         DragonMasterDevice.__init__(self, deviceManager=deviceManager)
+        return
 
 
     ####################Inherited Functions######################### 
@@ -460,6 +460,21 @@ class JoystickDevice(DragonMasterDevice):
 
         
 
+class PrinterDevice(DragonMasterDevice):
+
+    def __init__(self, deviceManager):
+        DragonMasterDevice.__init__(self, deviceManager=deviceManager)
+        return
+
+    """
+    Prints the total money that is won by the player. Call this method from the DeviceManager
+    """
+    def print_ticket(self, totalMoneyWon):
+        return
+
+
+    
+
 
 """
 PlayerStation contains a reference to each device that should be attached to the player station in out cabinet
@@ -497,6 +512,11 @@ Gets all valid printers that are connected to the machine. Searches for only Cus
 """
 def get_all_printers():
     printerList = []
+    conn = cups.Connection()
+
+    for printer in conn.getPrinters():
+        print printer
+
 
 
     return printerList
