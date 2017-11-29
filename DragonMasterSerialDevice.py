@@ -598,8 +598,9 @@ class DBV400(SerialDevice):
 
         while self.STATE == self.POWER_UP_NACK_STATE:
             flush_serial_device(self)
-            readLine = bytearray(read_serial_device(self, 200))
+            readLine = bytearray(read_serial_device(self, 400))
             if len(readLine) > 0:
+                print(readLine)
                 self.POWER_ACK[5] = readLine[5]
             flush_serial_device(self)
             write_serial_device(self, self.POWER_ACK)
@@ -666,6 +667,7 @@ class DBV400(SerialDevice):
                 'hex') == '01' and inputBytes[13].encode('hex') == '00'):
             currentState = self.POWER_UP_STATE
         elif (len(inputBytes) >= 8 and inputBytes[8].encode('hex') == 'e2'):
+            self.UID = inputBytes[4]
             currentState = self.UNSUPPORTED_STATE
         elif (len(inputBytes) >= 12 and inputBytes[10].encode('hex') == '00' and inputBytes[11].encode(
                 'hex') == '01' and inputBytes[12].encode('hex') == '01'):
