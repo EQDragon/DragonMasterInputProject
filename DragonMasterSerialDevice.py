@@ -138,7 +138,6 @@ def read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds =
     sleep(float(delayBeforeReadInMilliseconds) / 1000)
     serialDevice = dragonMasterSerialDevice.serialDevice
     try:
-        print(dragonMasterSerialDevice.serialDevice.isOpen)
         readLine = serialDevice.read(size=serialDevice.in_waiting)
         return readLine
     except:
