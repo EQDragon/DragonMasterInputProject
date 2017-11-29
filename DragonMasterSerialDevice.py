@@ -152,12 +152,13 @@ def poll_serial_thread(dragonMasterSerialDevice):
     serialDevice = dragonMasterSerialDevice.serialDevice
 
     while dragonMasterSerialDevice.pollDeviceForEvent:
-        #try:
-        if serialDevice.in_waiting > 1:
-            dragonMasterSerialDevice.on_data_received_event()
-        #except:
-        #    print ("There was an error polling device " + dragonMasterSerialDevice.to_string())
-        #    dragonMasterSerialDevice.pollDeviceForEvent = False #Thread will end if there is an error polling for a device
+        try:
+            if serialDevice.inWaiting() > 1:
+                dragonMasterSerialDevice.on_data_received_event()
+        except:
+            print serialDevice
+            print ("There was an error polling device " + dragonMasterSerialDevice.to_string())
+            dragonMasterSerialDevice.pollDeviceForEvent = False #Thread will end if there is an error polling for a device
     print dragonMasterSerialDevice.to_string() + " no longer polling for events"#Just want this for testing. want to remove later
 
 
@@ -283,7 +284,7 @@ class SerialDevice(DragonDeviceManager.DragonMasterDevice):
     By default this will close the associted serial device as well as end the currenct thread that is running for
     this particular device for events
     """
-    def disconnect_serial_device(self):
+    def disconnect_device(self):
         close_serial_device(self.serialDevice)
         self.pollDeviceForEvent = False
         return
@@ -435,6 +436,9 @@ class DBV400(SerialDevice):
     def on_data_received_event(self):
       #print('PASS REC = ', +self.PASSIVE_RECEIVE)
         read = None
+        if self.blockReadEvent:
+            return
+            
         if self.INIT == 0 and self.PASSIVE_RECEIVE == 1:
             read = read_serial_device(self)
     ######################Start If Statements#############################
@@ -510,7 +514,7 @@ class DBV400(SerialDevice):
             return True
         else:
             return False
-        pass
+        
 
 
     def to_string(self):

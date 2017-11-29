@@ -133,6 +133,7 @@ class DragonMasterDeviceManager:
                 pass
 
         else:
+            dragonMasterDevice.disconnect_device()
             print dragonMasterDevice.to_string() + " failed start~"
             return
 
@@ -476,6 +477,9 @@ class PlayerStation:
 
 
 ###############Device Search Methods###########################
+"""
+Gets all valid joystick devices that are connected to the machine
+"""
 def get_all_joystick_devices():
     JOYSTICK_DEVICE_NAME = "Ultimarc UltraStik Ultimarc Ultra-Stik Player 1"
     joystickList = []
@@ -487,6 +491,15 @@ def get_all_joystick_devices():
             joystickList.append(jStick)
 
     return joystickList
+
+"""
+Gets all valid printers that are connected to the machine. Searches for only Custom TG02-H Ticket printers
+"""
+def get_all_printers():
+    printerList = []
+
+
+    return printerList
 ##############################################################
 
 
