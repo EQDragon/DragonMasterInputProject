@@ -134,9 +134,11 @@ def write_serial_device(dragonMasterSerialDevice, dataToWrite):
 safely read from a serial device 
 """
 def read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds = 0):
+
     sleep(float(delayBeforeReadInMilliseconds) / 1000)
     serialDevice = dragonMasterSerialDevice.serialDevice
     try:
+        print(serialDevice.isOpen)
         readLine = serialDevice.read(size=serialDevice.in_waiting)
         return readLine
     except:
@@ -433,74 +435,84 @@ class DBV400(SerialDevice):
 
     def on_data_received_event(self):
       #print('PASS REC = ', +self.PASSIVE_RECEIVE)
+        read = None
         if self.INIT == 0 and self.PASSIVE_RECEIVE == 1:
             read = read_serial_device(self)
     ######################Start If Statements#############################
-        if len(read) >= 10 and read[8].encode('hex') == '55' and read[9].encode('hex') == '53' and read[10].encode('hex') == '44':
-            denomination = bytearray(read[11])
-            write_serial_device(self, self.ESCROW_ACK)
-            read = write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, minBytesToRead=1, maxMilisecondsToWaitPerRead=11000, delayBeforeReadInMilliseconds= 10, desiredReadCount=2)[1]
-            if (len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11'):
+            if read != None and len(read) >= 10 and read[8].encode('hex') == '55' and read[9].encode('hex') == '53' and read[10].encode('hex') == '44':
+                denomination = bytearray(read[11])
+                write_serial_device(self, self.ESCROW_ACK)
+                read = write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, minBytesToRead=1, maxMilisecondsToWaitPerRead=11000, delayBeforeReadInMilliseconds= 10, desiredReadCount=2)[1]
+                if (len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11'):
+                    print('DBV BILL REJECT')
+                    self.BILL_REJECT[5] = read[5]
+                    read = write_serial_device_wait_for_read(self, self.BILL_REJECT, 1, 200)
+                    self.IDLE_ACK[5] = read[5]
+                    write_serial_device(self, self.IDLE_ACK)
+                    return
+                read = write_serial_device_wait_for_read(self, self.VEND_VALID_ACK, 1, 600)
+                print('denomination = ',denomination[0])  # Return denomination here
+                if len(read) > 0:
+                    self.INHIBIT_ACK[5] = read[5]
+                read = write_serial_device_wait_for_read(self, self.INHIBIT_ACK, 1, 500)
+                if len(read) > 0:
+                    self.IDLE_ACK[5] = read[5]
+                write_serial_device(self, self.IDLE_ACK)
+                sleep(.2)
+                self.STATE = self.get_state()
+            if (read != None and len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11'):
                 print('DBV BILL REJECT')
                 self.BILL_REJECT[5] = read[5]
                 read = write_serial_device_wait_for_read(self, self.BILL_REJECT, 1, 200)
                 self.IDLE_ACK[5] = read[5]
                 write_serial_device(self, self.IDLE_ACK)
                 return
-            read = write_serial_device_wait_for_read(self, self.VEND_VALID_ACK, 1, 600)
-            print('denomination = ',denomination[0])  # Return denomination here
-            if len(read) > 0:
-                self.INHIBIT_ACK[5] = read[5]
-            read = write_serial_device_wait_for_read(self, self.INHIBIT_ACK, 1, 500)
-            if len(read) > 0:
-                self.IDLE_ACK[5] = read[5]
-            write_serial_device(self, self.IDLE_ACK)
-            sleep(.2)
-            self.STATE = self.get_state()
-        if (len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11'):
-            print('DBV BILL REJECT')
-            self.BILL_REJECT[5] = read[5]
-            read = write_serial_device_wait_for_read(self, self.BILL_REJECT, 1, 200)
-            self.IDLE_ACK[5] = read[5]
-            write_serial_device(self, self.IDLE_ACK)
-            return
-        if len(read) >= 8 and read[7].encode('hex') == '00' and (read[8].encode('hex') == '00' or read[8].encode('hex') == '00') and read[9].encode('hex') == '01':
-            print("REINITIALIZE")
-            self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
-            self.RESET_REQUEST[4] = 0x01
-            self.INHIBIT_ACK[4] = 0x01
-            self.INHIBIT_REQUEST[4] = 0x01
-            self.IDLE_REQUEST[4] = 0x01
-            self.IDLE_ACK[4] = 0x01
-            self.SET_UID[8] = 0x01
-            self.start_dbv()
-            return
-        if len(read) >= 7 and read[6].encode('hex') == '01' and read[7].encode('hex') == '12':
-            self.ERROR_ACK[5] = read[5]
-            self.ERROR_ACK[6] = read[6]
-            self.ERROR_ACK[7] = read[7]
-            write_serial_device(self, self.ERROR_ACK)
-            print('OP ERROR')
-        if len(read) >= 7 and read[6].encode('hex') == '00' and read[7].encode('hex') == '12':
-            self.ERROR_ACK[5] = read[5]
-            self.ERROR_ACK[6] = read[6]
-            self.ERROR_ACK[7] = read[7]
-            write_serial_device(self, self.ERROR_ACK)
-            self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
-            self.RESET_REQUEST[4] = 0x01
-            self.INHIBIT_ACK[4] = 0x01
-            self.INHIBIT_REQUEST[4] = 0x01
-            self.IDLE_REQUEST[4] = 0x01
-            self.IDLE_ACK[4] = 0x01
-            self.SET_UID[8] = 0x01
-            self.start_dbv()
-            return
+            if read != None and len(read) >= 8 and read[7].encode('hex') == '00' and (read[8].encode('hex') == '00' or read[8].encode('hex') == '00') and read[9].encode('hex') == '01':
+                print("REINITIALIZE")
+                self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
+                self.RESET_REQUEST[4] = 0x01
+                self.INHIBIT_ACK[4] = 0x01
+                self.INHIBIT_REQUEST[4] = 0x01
+                self.IDLE_REQUEST[4] = 0x01
+                self.IDLE_ACK[4] = 0x01
+                self.SET_UID[8] = 0x01
+                self.start_dbv()
+                return
+            if read != None and len(read) >= 7 and read[6].encode('hex') == '01' and read[7].encode('hex') == '12':
+                self.ERROR_ACK[5] = read[5]
+                self.ERROR_ACK[6] = read[6]
+                self.ERROR_ACK[7] = read[7]
+                write_serial_device(self, self.ERROR_ACK)
+                print('OP ERROR')
+            if read != None and len(read) >= 7 and read[6].encode('hex') == '00' and read[7].encode('hex') == '12':
+                self.ERROR_ACK[5] = read[5]
+                self.ERROR_ACK[6] = read[6]
+                self.ERROR_ACK[7] = read[7]
+                write_serial_device(self, self.ERROR_ACK)
+                self.STATUS_REQUEST = bytearray([0x12, 0x08, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00])
+                self.RESET_REQUEST[4] = 0x01
+                self.INHIBIT_ACK[4] = 0x01
+                self.INHIBIT_REQUEST[4] = 0x01
+                self.IDLE_REQUEST[4] = 0x01
+                self.IDLE_ACK[4] = 0x01
+                self.SET_UID[8] = 0x01
+                self.start_dbv()
+                return
 
 
     def start_device(self):
+        self.INIT = 1
+        self.PASSIVE_RECEIVE = 0
         SerialDevice.start_device(self)
+        self.serialDevice.readTimeout = 5
         self.start_dbv()
+
+        if(self.STATE == self.IDLE_STATE or self.STATE == self.INHIBIT_STATE):
+            return True
+        else:
+            return False
         pass
+
 
     def to_string(self):
         return "DBV-400(" + self.comport + ")"

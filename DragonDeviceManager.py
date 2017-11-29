@@ -252,7 +252,7 @@ class DragonMasterDeviceManager:
                     return True
 
 
-        for playerStation in self.deviceDictionary.items():
+        for key, playerStation in self.deviceDictionary.items():
             if playerStation != None and playerStation.dbvDevice != None:
                 if playerStation.dbvDevice.comport == dbvDeviceComport:
                     return True
