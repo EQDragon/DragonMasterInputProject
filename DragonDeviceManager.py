@@ -6,7 +6,7 @@ import pygame
 import syslog
 import os
 import pyudev
-from escpos.connections import getUSBPrinter
+#from escpos.connections import getUSBPrinter
 
 class DragonMasterDeviceManager:
 
@@ -15,6 +15,7 @@ class DragonMasterDeviceManager:
     POLL_TIME_IN_SECONDS = 2
 
     def __init__(self):
+
         self.eventQueue = Queue.Queue()
         self.deviceList = []
         self.deviceDictionary = {}

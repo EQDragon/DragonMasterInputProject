@@ -78,6 +78,7 @@ def write_serial_device_wait_multiple_read(dragonMasterSerialDevice, dataToWrite
 
     try:
         serialDevice.write(dataToWrite)
+        print("WRITE:",dataToWrite)
 
 
     except:
@@ -108,7 +109,7 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
     maxMillisecondsConvertToSeconds = float(maxMillisecondsToWait) / 1000
 
     try:
-        #print('WRITE:',dataToWrite)
+        print('WRITE:',dataToWrite)
         serialDevice.write(dataToWrite)
 
     except:
@@ -121,8 +122,10 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
     initialTime = time()
     while time() - initialTime < maxMillisecondsConvertToSeconds:
         if (serialDevice.in_waiting >= minBytesToRead):
-
-            readLine = read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds=delayBeforeReadInMilliseconds)
+            inwaiting = serialDevice.in_waiting
+            print("PREV BYTES 2 READ",inwaiting)
+            #readLine = read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds=delayBeforeReadInMilliseconds)
+            readLine = dragonMasterSerialDevice.serialDevice.read(size = inwaiting)
             dragonMasterSerialDevice.blockReadEvent = False
             #print('READ:',readLine.encode('hex'))
             return readLine
@@ -138,7 +141,7 @@ safely write to a serial port. This method will not return any read values
 def write_serial_device(dragonMasterSerialDevice, dataToWrite):
     serialDevice = dragonMasterSerialDevice.serialDevice
     try:
-
+        print('WRITE:', dataToWrite)
         serialDevice.write(dataToWrite)
 
     except:
@@ -150,14 +153,16 @@ def write_serial_device(dragonMasterSerialDevice, dataToWrite):
 safely read from a serial device 
 """
 def read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds = 0):
+    inwaiting = dragonMasterSerialDevice.serialDevice.in_waiting
+    print("READ IN WAITING0:", inwaiting)
     delayBeforeReadToSeconds = float(delayBeforeReadInMilliseconds) / 1000
     initialTime = time()
     sleep(delayBeforeReadToSeconds)
     #serialDevice = dragonMasterSerialDevice.serialDevice
-    #print("READ IN WAITING0:", str(dragonMasterSerialDevice.serialDevice.in_waiting))
     try:
         #print("READ IN WAITING1:",str(dragonMasterSerialDevice.serialDevice.in_waiting))
-        readLine = dragonMasterSerialDevice.serialDevice.read(size=dragonMasterSerialDevice.serialDevice.in_waiting)
+        readLine = dragonMasterSerialDevice.serialDevice.read(size=inwaiting)
+        print("READ:",readLine.encode('hex'))
         return readLine
     except:
         print ('There was an error reading ' + dragonMasterSerialDevice.serialDevice.port)
@@ -427,14 +432,15 @@ class DBV400(SerialDevice):
     INHIBIT_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x01, 0x82, 0x00, 0x01, 0x06])
     INHIBIT_REQUEST = bytearray([0x12, 0x08, 0x00, 0x10, 0x01, 0x00, 0x12, 0x00])
     IDLE_REQUEST = bytearray([0x12, 0x08, 0x00, 0x10, 0x01, 0x00, 0x13, 0x10])
-    IDLE_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x01, 0x83, 0x01, 0x11, 0x06 ])
+    IDLE_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x01, 0x83, 0x01, 0x11, 0x06])
     ESCROW_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x01, 0x85, 0x02, 0x11, 0x06])
     BILL_REJECT = bytearray([0x12, 0x09, 0x00, 0x10, 0x02, 0x80, 0x04, 0x11, 0x06])
     ERROR_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x00, 0x80, 0x01, 0x12, 0x06])
     STACK_INHIBIT = bytearray([0x12, 0x08, 0x00, 0x10, 0x02, 0x00, 0x14, 0x10])
     VEND_VALID_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x02, 0x86, 0x03, 0x11, 0x06])
     ERROR_ACK = bytearray([0x12, 0x09, 0x00, 0x10, 0x00, 0x80, 0x01, 0x12, 0x06])
-
+    pollDeviceForEvent = False
+    UID_SET = False
     #STATES OF DBV
     IDLE_STATE = "IDLE"
     INHIBIT_STATE = "INHIBIT"
@@ -527,7 +533,7 @@ class DBV400(SerialDevice):
         self.INIT = 1
         self.PASSIVE_RECEIVE = 0
         SerialDevice.start_device(self)
-        self.pollDeviceForEvent = False
+        #sleep(5)
         self.serialDevice.readTimeout = 5
         self.start_dbv()
 
@@ -616,6 +622,9 @@ class DBV400(SerialDevice):
     Initializes a DBV at start-up
     """
     def start_dbv(self):
+
+
+
         self.PASSIVE_RECEIVE = 0
         self.INIT = 1
         flush_serial_device(self)
@@ -668,6 +677,7 @@ class DBV400(SerialDevice):
     ###############################################################
 
     def set_uid(self):
+        self.UID_SET = True
         self.RESET_REQUEST[4] = self.UID
         self.INHIBIT_ACK[4] = self.UID
         self.INHIBIT_REQUEST[4] = self.UID
@@ -690,6 +700,13 @@ class DBV400(SerialDevice):
         self.PASSIVE_RECEIVE = 0
         currentState = None
         flush_serial_device(self)
+        if(self.UID_SET == True):
+            self.STATUS_REQUEST[4] = self.UID;
+            self.STATUS_REQUEST[3] = 0x10;
+            print("UID ALREADY SET")
+        else:
+            self.STATUS_REQUEST[4] = 0x00
+            self.STATUS_REQUEST[3] = 0x00
         #write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, minBytesToRead = 1, maxMillisecondsToWait = 10, delayBeforeReadInMilliseconds = 2):
         inputBytes = write_serial_device_wait_for_read(self,self.STATUS_REQUEST,5,maxMillisecondsToWait=5000,delayBeforeReadInMilliseconds=0)
         if (inputBytes == None):
