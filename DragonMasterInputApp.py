@@ -19,7 +19,8 @@ context = pyudev.Context
 #DragonMasterSerialDevice.print_all_comport_info()
 
 #Initialize an instance of DragonMaster Device Manager that will handle events coming from all DragonMaster devices
-dragonMasterDeviceManager = DragonDeviceManager.DragonMasterDeviceManager()
+DragonDeviceManager.get_all_printers()
+#dragonMasterDeviceManager = DragonDeviceManager.DragonMasterDeviceManager()
 
 
 #joystickList = DragonDeviceManager.get_all_joystick_devices()
