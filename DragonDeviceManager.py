@@ -6,7 +6,7 @@ import pygame
 import syslog
 import os
 import pyudev
-import cups
+from escpos.connections import getUSBPrinter
 
 class DragonMasterDeviceManager:
 
@@ -24,7 +24,7 @@ class DragonMasterDeviceManager:
 
         '''
         #Thread for writing to text file
-        
+
         self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
         self.writePollingThread.daemon = True
         self.writePollingThread.start()
@@ -107,17 +107,17 @@ class DragonMasterDeviceManager:
 
 
     """
-    Use this method to add a new device to the list of all connected 
+    Use this method to add a new device to the list of all connected
     dragon master devices
 
     Please be sure the device is not a duplicate before using this method.
-    This method assumes that the check has already been made. It will overwrite the device in 
+    This method assumes that the check has already been made. It will overwrite the device in
     a device dictionary method with the new one that is current being added
     """
     def add_device(self, dragonMasterDevice):
         if dragonMasterDevice == None:
             return#Don't add a device if it is null
-        
+
         if dragonMasterDevice.start_device():
             self.deviceList.append(dragonMasterDevice)
 
@@ -154,7 +154,7 @@ class DragonMasterDeviceManager:
         return
 
     """
-    Searches for all valid dragon master devices to add to the device manager. Polls for 
+    Searches for all valid dragon master devices to add to the device manager. Polls for
     Draxboard, DBV-400, Joysticks, and Ticket Printers
     """
     def search_devices(self):
@@ -174,11 +174,11 @@ class DragonMasterDeviceManager:
                 if not self.manager_contains_dbv_device(element.device):
                     self.add_device(DragonMasterSerialDevice.DBV400(deviceManager=self, deviceName=element.name, comport=element.device))
 
-        
+
 
         if (previousDeviceCount != len(self.deviceList)):#This if statement is only used to display if a device was added or removed
             print "Total Devices: " + str(len(self.deviceList))
-            
+
         return
 
     """
@@ -234,7 +234,7 @@ class DragonMasterDeviceManager:
                 if dev.comport == draxDeviceComport:
                     return True
 
-                    
+
         for key, playerStation in self.deviceDictionary.items():
             if playerStation != None and playerStation.draxboardDevice != None:
                 if playerStation.draxboardDevice.comport == draxDeviceComport:
@@ -301,7 +301,7 @@ class DragonMasterDeviceManager:
             inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
             print inputTextFileInfo.st_size
 
-            
+
 
 
     ########################################################################
@@ -424,7 +424,7 @@ class JoystickDevice(DragonMasterDevice):
         return
 
 
-    ####################Inherited Functions######################### 
+    ####################Inherited Functions#########################
 
     """
     See DragonMasterDevice for details
@@ -470,7 +470,7 @@ class JoystickDevice(DragonMasterDevice):
     def has_device_errored(self):
         return False
 
-        
+
 
 class PrinterDevice(DragonMasterDevice):
 
@@ -485,7 +485,7 @@ class PrinterDevice(DragonMasterDevice):
         return
 
 
-    
+
 
 
 """
@@ -523,15 +523,14 @@ def get_all_joystick_devices():
 Gets all valid printers that are connected to the machine. Searches for only Custom TG02-H Ticket printers
 """
 def get_all_printers():
-    printerList = []
-    conn = cups.Connection()
+    printer = getUSBPrinter()(idVendor=0x0dd4,  # USB vendor and product Ids for Bixolon SRP-350plus
+                              idProduct=0x0186,  # printer
+                                inputEndPoint = 0x81,
+                    outputEndPoint = 0x01)
 
-    for printer in conn.getPrinters():
-        print printer
+    print printer
 
-
-
-    return printerList
+    return
 ##############################################################
 
 
