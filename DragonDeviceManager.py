@@ -23,8 +23,9 @@ class DragonMasterDeviceManager:
 
 
 
-
+        '''
         #Thread for writing to text file
+        
         self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
         self.writePollingThread.daemon = True
         self.writePollingThread.start()
@@ -33,7 +34,7 @@ class DragonMasterDeviceManager:
         self.debugCommandThread = threading.Thread(target=self.poll_debug_commands)
         self.debugCommandThread.daemon = True
         self.debugCommandThread.start()
-
+        '''
         #Thread to poll devices for malfunctions and reconnection
         self.pollDeviceThread = threading.Thread(target=self.poll_devices)
         self.pollDeviceThread.daemon = True
@@ -82,6 +83,10 @@ class DragonMasterDeviceManager:
                 elif command == 'inhibit':
                     if len(inputLineComponents) >= 2:
                         self.debug_inhibit_dbv(inputLineComponents[1])
+                    pass
+                elif command == 'state':
+                    if len(inputLineComponents) >= 2:
+                        self.debug_get_state_dbv(inputLineComponents[1])
                     pass
                 else:
                     print "\'" + command + "\' is not a valid command"
@@ -330,7 +335,7 @@ class DragonMasterDeviceManager:
     """
     def debug_idle_dbv(self, dbvDeviceComport):
         for dev in self.deviceList:
-            if dev is DragonMasterDeviceManager.DBV400 and dev.comport == dbvDeviceComport:
+            if isinstance(dev,DragonMasterSerialDevice.DBV400) and dev.comport == dbvDeviceComport:
                 dev.idle_dbv()
                 return
         return
@@ -340,7 +345,7 @@ class DragonMasterDeviceManager:
     """
     def debug_reset_dbv(self, dbvDeviceComport):
         for dev in self.deviceList:
-            if dev is DragonMasterDeviceManager.DBV400 and dev.comport == dbvDeviceComport:
+            if isinstance(dev,DragonMasterSerialDevice.DBV400) and dev.comport == dbvDeviceComport:
                 dev.reset_dbv()
                 return
         return
@@ -350,12 +355,19 @@ class DragonMasterDeviceManager:
     """
     def debug_inhibit_dbv(self, dbvDeviceComport):
         for dev in self.deviceList:
-            if dev is DragonMasterDeviceManager.DBV400 and dev.comport == dbvDeviceComport:
+            if isinstance(dev,DragonMasterSerialDevice.DBV400) and dev.comport == dbvDeviceComport:
                 dev.inhibit_dbv()
                 return
 
         return
 
+    def debug_get_state_dbv(self, dbvDeviceComport):
+        for dev in self.deviceList:
+            if isinstance(dev, DragonMasterSerialDevice.DBV400) and dev.comport == dbvDeviceComport:
+                dev.get_state()
+                return
+
+        return
 
 
     ########################################################################
