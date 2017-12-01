@@ -34,11 +34,14 @@ class DragonMasterDeviceManager:
         self.debugCommandThread = threading.Thread(target=self.poll_debug_commands)
         self.debugCommandThread.daemon = True
         self.debugCommandThread.start()
-        '''
+        
+        sleep(8)
         #Thread to poll devices for malfunctions and reconnection
         self.pollDeviceThread = threading.Thread(target=self.poll_devices)
         self.pollDeviceThread.daemon = True
         self.pollDeviceThread.start()
+        '''
+        self.poll_devices()
         return
 
 
