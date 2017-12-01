@@ -1,4 +1,5 @@
 from time import sleep
+from time import time
 import serial
 import serial.tools.list_ports
 import threading
@@ -66,11 +67,14 @@ This will return a list with the size 'desiredReadCount'
 (int) minBytesToRead: The minimum bytes on in
 """
 def write_serial_device_wait_multiple_read(dragonMasterSerialDevice, dataToWrite, minBytesToRead=1, maxMilisecondsToWaitPerRead=10, delayBeforeReadInMilliseconds = 2, desiredReadCount=2):
+
     readList = [None] * desiredReadCount
 
     dragonMasterSerialDevice.blockReadEvent = True
 
     serialDevice = dragonMasterSerialDevice.serialDevice
+
+    maxMillisecondsConvertToSeconds = float(maxMilisecondsToWaitPerRead) / 1000
 
     try:
         serialDevice.write(dataToWrite)
@@ -82,11 +86,13 @@ def write_serial_device_wait_multiple_read(dragonMasterSerialDevice, dataToWrite
         return readList
 
     for i in range(desiredReadCount):
-        for _ in range(maxMilisecondsToWaitPerRead):
+        initialTime = time()
+
+        while (time() - initialTime) < maxMillisecondsConvertToSeconds:
             if serialDevice.in_waiting >= minBytesToRead:
                 readList[i] = read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds=delayBeforeReadInMilliseconds)
                 break
-            sleep(.001)
+
 
     dragonMasterSerialDevice.blockReadEvent = False
     return readList
@@ -99,6 +105,7 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
     dragonMasterSerialDevice.blockReadEvent = True
 
     serialDevice = dragonMasterSerialDevice.serialDevice
+    maxMillisecondsConvertToSeconds = float(maxMillisecondsToWait) / 1000
 
     try:
         #print('WRITE:',dataToWrite)
@@ -110,18 +117,19 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
         return
 
 
-    try:
-        for _ in range(maxMillisecondsToWait):
-            if (serialDevice.in_waiting >= minBytesToRead):
 
-                readLine = serialDevice.read(serialDevice.in_waiting)
-                dragonMasterSerialDevice.blockReadEvent = False
-                #print('READ:',readLine.encode('hex'))
-                return readLine
-            sleep(.001)
-    except:
-        print "There was an error reading from " + dragonMasterSerialDevice.to_string()
+    initialTime = time()
+    while time() - initialTime < maxMillisecondsConvertToSeconds:
+        if (serialDevice.in_waiting >= minBytesToRead):
+
+            readLine = read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds=delayBeforeReadInMilliseconds)
+            dragonMasterSerialDevice.blockReadEvent = False
+            #print('READ:',readLine.encode('hex'))
+            return readLine
+
     print (dragonMasterSerialDevice.to_string() + " timed out!")#If write serial device
+    dragonMasterSerialDevice.blockReadEvent = False
+    return
 
 
 """
@@ -142,8 +150,9 @@ def write_serial_device(dragonMasterSerialDevice, dataToWrite):
 safely read from a serial device 
 """
 def read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds = 0):
-    if(delayBeforeReadInMilliseconds != 0):
-        sleep(float(delayBeforeReadInMilliseconds) / 1000)
+    delayBeforeReadToSeconds = float(delayBeforeReadInMilliseconds) / 1000
+    initialTime = time()
+    sleep(delayBeforeReadToSeconds)
     #serialDevice = dragonMasterSerialDevice.serialDevice
     #print("READ IN WAITING0:", str(dragonMasterSerialDevice.serialDevice.in_waiting))
     try:
