@@ -151,7 +151,32 @@ class DragonMasterDeviceManager:
     def remove_device(self, dragonMasterDevice):
         if dragonMasterDevice == None:
             return
+        playerStation = None
+        if dragonMasterDevice.parentPath != None and self.deviceDictionary.has_key(dragonMasterDevice.parentPath):
+            playerStation = self.deviceDictionary[dragonMasterDevice.parentPath]
 
+        initialSize = len(self.deviceList)
+        if self.deviceList.__contains__(dragonMasterDevice):
+            self.deviceList.remove(dragonMasterDevice)
+        if isinstance(dragonMasterDevice, DragonMasterSerialDevice.Draxboard):
+            if playerStation != None:
+                playerStation.draxboardDevice = None
+        if isinstance(dragonMasterDevice, DragonMasterSerialDevice.DBV400):
+            if playerStation != None:
+                playerStation.dbvDevice = None
+            pass
+        if isinstance(dragonMasterDevice, JoystickDevice):
+            if playerStation != None:
+                playerStation.joystickDevice = None
+            pass
+
+        dragonMasterDevice.disconnect_device()#All devices should have a disconnect function that can be called to
+                                                #to end any background work that may be occuring
+
+        if len(self.deviceList) < initialSize:
+            print dragonMasterDevice.to_string() + " was successfully removed from the list!"
+        else:
+            print dragonMasterDevice.to_string() + " was NOT removed~"
         return
 
     """
@@ -362,6 +387,9 @@ class DragonMasterDeviceManager:
 
         return
 
+    """
+    Returns a string of the current state of the DBV-400 device that matches the provided  comport
+    """
     def debug_get_state_dbv(self, dbvDeviceComport):
         for dev in self.deviceList:
             if isinstance(dev, DragonMasterSerialDevice.DBV400) and dev.comport == dbvDeviceComport:
@@ -381,6 +409,7 @@ organizing all the devices to each player station
 class DragonMasterDevice:
 
     def __init__(self, deviceManager):
+        self.parentPath = None
         self.deviceManager = deviceManager
         self.set_parent_device_path()
 
