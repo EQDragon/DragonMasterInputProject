@@ -124,10 +124,10 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
     while time() - initialTime < maxMillisecondsConvertToSeconds:
 
         if (serialDevice.in_waiting >= minBytesToRead):
-            inwaiting = serialDevice.in_waiting
-            print("PREV BYTES 2 READ",inwaiting)
+
             #readLine = read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds=delayBeforeReadInMilliseconds)
             try:
+                inwaiting = serialDevice.in_waiting
                 readLine = dragonMasterSerialDevice.serialDevice.read(size = inwaiting)
                 dragonMasterSerialDevice.blockReadEvent = False
                 print('READ:',readLine.encode('hex'))
@@ -159,13 +159,10 @@ def write_serial_device(dragonMasterSerialDevice, dataToWrite):
 safely read from a serial device 
 """
 def read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds = 0):
-    inwaiting = dragonMasterSerialDevice.serialDevice.in_waiting
-    print("READ IN WAITING0:", inwaiting)
     delayBeforeReadToSeconds = float(delayBeforeReadInMilliseconds) / 1000
-    initialTime = time()
     sleep(delayBeforeReadToSeconds)
-    #serialDevice = dragonMasterSerialDevice.serialDevice
     try:
+        inwaiting = dragonMasterSerialDevice.serialDevice.in_waiting
         #print("READ IN WAITING1:",str(dragonMasterSerialDevice.serialDevice.in_waiting))
         readLine = dragonMasterSerialDevice.serialDevice.read(size=inwaiting)
         print("READ:",readLine.encode('hex'))
@@ -180,15 +177,16 @@ Polls a serial thread to check if at any point there is something to read from a
 """
 def poll_serial_thread(dragonMasterSerialDevice):
     serialDevice = dragonMasterSerialDevice.serialDevice
+    try:
+        while dragonMasterSerialDevice.pollDeviceForEvent:
 
-    while dragonMasterSerialDevice.pollDeviceForEvent:
-        try:
             if not dragonMasterSerialDevice.blockReadEvent and serialDevice.in_waiting > 1:
-                dragonMasterSerialDevice.on_data_received_event()
-        except:
-            #print serialDevice
-            print ("There was an error polling device " + dragonMasterSerialDevice.to_string())
-            dragonMasterSerialDevice.pollDeviceForEvent = False #Thread will end if there is an error polling for a device
+                    dragonMasterSerialDevice.on_data_received_event()
+    except:
+        # print serialDevice
+        print ("There was an error polling device " + dragonMasterSerialDevice.to_string())
+        dragonMasterSerialDevice.pollDeviceForEvent = False  # Thread will end if there is an error polling for a device
+
     print dragonMasterSerialDevice.to_string() + " no longer polling for events"#Just want this for testing. want to remove later
 
 
@@ -473,17 +471,20 @@ class DBV400(SerialDevice):
         if self.INIT == 0 and self.PASSIVE_RECEIVE == 1:
             read = read_serial_device(self)
             print("PASS REC")
+
     ######################Start If Statements#############################
             if read != None and len(read) >= 10 and read[8].encode('hex') == '55' and read[9].encode('hex') == '53' and read[10].encode('hex') == '44':
                 denomination = bytearray(read[11])
                 write_serial_device(self, self.ESCROW_ACK)
-                read = write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, minBytesToRead=1, maxMilisecondsToWaitPerRead=11000, delayBeforeReadInMilliseconds= 10, desiredReadCount=2)[1]
-                if (len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11'):
+                read = write_serial_device_wait_multiple_read(self, self.STACK_INHIBIT, minBytesToRead=1, maxMilisecondsToWaitPerRead=15000, delayBeforeReadInMilliseconds= 10, desiredReadCount=2)[1]
+                if (read != None and len(read) >= 8 and read[6].encode('hex') == '04' and read[7].encode('hex') == '11'):
                     print('DBV BILL REJECT')
                     self.BILL_REJECT[5] = read[5]
                     read = write_serial_device_wait_for_read(self, self.BILL_REJECT, 1, 200)
                     self.IDLE_ACK[5] = read[5]
                     write_serial_device(self, self.IDLE_ACK)
+                    return
+                elif read == None:
                     return
                 read = write_serial_device_wait_for_read(self, self.VEND_VALID_ACK, 1, 600)
                 print('denomination = ',denomination[0])  # Return denomination here
@@ -520,6 +521,7 @@ class DBV400(SerialDevice):
                 write_serial_device(self, self.ERROR_ACK)
                 print('OP ERROR')
             if read != None and len(read) >= 7 and read[6].encode('hex') == '00' and read[7].encode('hex') == '12':
+                print("error clear")
                 self.ERROR_ACK[5] = read[5]
                 self.ERROR_ACK[6] = read[6]
                 self.ERROR_ACK[7] = read[7]
@@ -539,10 +541,13 @@ class DBV400(SerialDevice):
         self.INIT = 1
         self.PASSIVE_RECEIVE = 0
         SerialDevice.start_device(self)
-        sleep(5)
-        self.serialDevice.readTimeout = 5
-        self.start_dbv()
 
+        self.serialDevice.readTimeout = 5
+        print("Start DBV here")
+        self.start_dbv()
+        #start_thread = threading.Thread(target = self.start_dbv)
+        #start_thread.daemon = True
+        #start_thread.start()
         if(self.STATE == self.IDLE_STATE or self.STATE == self.INHIBIT_STATE):
             return True
         else:
@@ -639,12 +644,9 @@ class DBV400(SerialDevice):
 
         self.PASSIVE_RECEIVE = 0
         self.INIT = 1
-        flush_serial_device(self)
-        print('start')
+        print("start", self.to_string())
         sleep(.05)
-        if self.serialDevice.in_waiting >= 1:
-            readLine = read_serial_device(self,delayBeforeReadInMilliseconds=0)
-            print(readLine.encode('hex'))
+
         self.STATE = self.get_state()
         flush_serial_device(self)
 
@@ -660,7 +662,7 @@ class DBV400(SerialDevice):
             flush_serial_device(self)
             write_serial_device(self, self.POWER_ACK)
             flush_serial_device(self)
-            sleep(1.5)
+            sleep(1)
             self.STATE = self.get_state()
             self.PASSIVE_RECEIVE = 0
 
