@@ -22,7 +22,9 @@ class DragonMasterDeviceManager:
         self.deviceContext = pyudev.Context()
         self.playerStationKeyOrder = []#This list will hold the order of all the player stations that are currently avaiable. By default the order will be set to the order it was added
         #print (os.path.realpath(__file__))
-
+        
+        self.DRAGON_DEVICE_INPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_INPUT_TEXT_FILE)
+        self.DRAGON_DEVICE_OUTPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_OUTPUT_TEXT_FILE)
 
         print ("Program initializing. Please be patient. This will take 20 seconds....")
         sleep(20)
@@ -136,7 +138,7 @@ class DragonMasterDeviceManager:
             if os.path.isfile(self.DRAGON_DEVICE_OUTPUT_TEXT_FILE):
                 outStat = os.stat(self.DRAGON_DEVICE_OUTPUT_TEXT_FILE)
                 if outStat.st_size:
-                    print outStat.st_size
+                    pass
             sleep(.016)
 
         return
