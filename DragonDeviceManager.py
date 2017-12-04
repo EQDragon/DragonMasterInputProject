@@ -22,7 +22,7 @@ class DragonMasterDeviceManager:
         self.deviceContext = pyudev.Context()
         self.playerStationKeyOrder = []#This list will hold the order of all the player stations that are currently avaiable. By default the order will be set to the order it was added
         #print (os.path.realpath(__file__))
-        
+
         self.DRAGON_DEVICE_INPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_INPUT_TEXT_FILE)
         self.DRAGON_DEVICE_OUTPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_OUTPUT_TEXT_FILE)
 
@@ -383,14 +383,28 @@ class DragonMasterDeviceManager:
         print "\'reset\' - Enter this command followed by the comport of the DBV400 to reset the device. Will be set to idle after reset is complete"
         print set_string_length("-", lengthOfString=60, spacingChar='-')
 
+    """
+    Use this method to print out the status of every device that is currently connected to each player station.  primarily used to debugging
+    """
     def print_all_player_station_status(self):
-        pass
+        set_string_length("Dragon Master Status", lengthOfString = 60, spacingChar = '=')
+        player_index = 0
+        for key, playerStation in self.deviceDictionary.items:
+            player_index += 1
+            print set_string_length("Player Station " + str(player_index), lengthOfString = 60, spacingChar = '-')
+            self.print_player_station_status(key)
+        return
 
+    """
+    Prints one single instance of a player station based on the playerStation dictionary key
+    """
     def print_player_station_status(self, playerStationParentDeviceKey):
         if not self.deviceDictionary.has_key(playerStationParentDeviceKey):
             return
-        playerStation = self.deviceDictionary[playerStationParentDeviceKey]
 
+        playerStation = self.deviceDictionary[playerStationParentDeviceKey]
+        print set_string_length_multiple("Player Station Path: " + playerStationParentDeviceKey)
+        set_string_length_multiple("Device Type", "|", lengthOfString=15) + set_string_length_multiple("Port/ID", "|", lengthOfString=15) + set_string_length_multiple("Device Status", "|", lengthOfString=15)
         drax = playerStation.draxboardDevice
         dbv = playerStation.dbvDevice
         joy = playerStation.joystickDevice
