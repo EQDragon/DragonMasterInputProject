@@ -36,7 +36,7 @@ dragonMasterDeviceManager = DragonDeviceManager.DragonMasterDeviceManager()
 
 
 
-while 1:
+while True:
 	#pygame.joystick.quit()
 	#pygame.joystick.init()
 	#pygame.event.pump()

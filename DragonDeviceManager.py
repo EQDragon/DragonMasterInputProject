@@ -20,15 +20,24 @@ class DragonMasterDeviceManager:
         self.deviceList = []
         self.deviceDictionary = {}
         self.deviceContext = pyudev.Context()
+        self.playerStationKeyOrder = []#This list will hold the order of all the player stations that are currently avaiable. By default the order will be set to the order it was added
+        #print (os.path.realpath(__file__))
 
 
+        print ("Program initializing. Please be patient. This will take 20 seconds....")
+        sleep(20)
 
 
         #Thread for writing to text file
-        sleep(20)
         self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
         self.writePollingThread.daemon = True
         self.writePollingThread.start()
+
+        #Thread To help with polling commans that comme from the DragonMaster game
+        self.readPollingThread = threading.Thread(target=self.poll_read_from_output_text)
+        self.readPollingThread.daemon = True
+        self.readPollingThread.start()
+
 
         #Thread for polling devices to make sure they are not malfunctioning
         self.debugCommandThread = threading.Thread(target=self.poll_debug_commands)
@@ -94,7 +103,10 @@ class DragonMasterDeviceManager:
                     print "\'" + command + "\' is not a valid command"
         return
 
-
+    """
+    This method is used to check the status of all currently connected devices and make sure they are not malfunctioning.
+    It is also used to add devices if they are connected to it later on after the program has started
+    """
     def poll_devices(self):
         while True:
             self.deviceContext = pyudev.Context() #Want to reinitialize the context of the system at every update
@@ -103,6 +115,32 @@ class DragonMasterDeviceManager:
 
             self.search_devices()
             sleep(2)
+
+            #After we poll for any new devices, we will check if any of the devices have errored. If they have we remove them from the list
+            #in order to reinitialize them and hopefully reestablish connection
+            tempRemoveDeviceList = []
+            for dev in self.deviceList:
+                if dev.has_device_errored():
+                    tempRemoveDeviceList.append(dev)
+
+            for dev in tempRemoveDeviceList:
+                self.remove_device(dev)
+        return
+
+    """
+    This method is used to poll for any commands that come straight from external programs such
+    as our Dragon Master Unity game
+    """
+    def poll_read_from_output_text(self):
+        while True:
+            if os.path.isfile(self.DRAGON_DEVICE_OUTPUT_TEXT_FILE):
+                outStat = os.stat(self.DRAGON_DEVICE_OUTPUT_TEXT_FILE)
+                if outStat.st_size:
+                    print outStat.st_size
+            sleep(.016)
+
+        return
+
 
 
 
@@ -188,7 +226,6 @@ class DragonMasterDeviceManager:
     def search_devices(self):
         #Get All Drax Devices
         previousDeviceCount = len(self.deviceList)
-
 
         DragonMasterSerialDevice.get_all_drax_comports()
         for element in DragonMasterSerialDevice.get_all_drax_comports():
@@ -317,7 +354,6 @@ class DragonMasterDeviceManager:
     """
     def add_event_to_queue(self, eventString):
         self.eventQueue.put(eventString)
-
         return
 
     """
@@ -326,8 +362,9 @@ class DragonMasterDeviceManager:
     """
     def write_to_text_input(self):
         if self.eventQueue.qsize() > 0:
-            inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
-            print inputTextFileInfo.st_size
+            if not os.path.isfile(self.DRAGON_DEVICE_INPUT_TEXT_FILE):
+                inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
+                print inputTextFileInfo.st_size
 
 
 
@@ -355,6 +392,8 @@ class DragonMasterDeviceManager:
         drax = playerStation.draxboardDevice
         dbv = playerStation.dbvDevice
         joy = playerStation.joystickDevice
+
+        set_string_length()
         pass
 
 
@@ -555,12 +594,9 @@ def get_all_joystick_devices():
 Gets all valid printers that are connected to the machine. Searches for only Custom TG02-H Ticket printers
 """
 def get_all_printers():
-    printer = getUSBPrinter()(idVendor=0x0dd4,  # USB vendor and product Ids for Bixolon SRP-350plus
-                              idProduct=0x0186,  # printer
-                                inputEndPoint = 0x81,
-                    outputEndPoint = 0x01)
 
-    print printer
+
+
 
     return
 ##############################################################
