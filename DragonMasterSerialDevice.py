@@ -382,6 +382,15 @@ class Draxboard(SerialDevice):
             return False
         return True
 
+    def get_state(self):
+        try:
+            if self.serialDevice.is_open:
+                return "Active"
+            else:
+                return "Port Closed"
+        except:
+            return "ERROR"
+
 
     ##############################################################################################################    
     """
@@ -718,7 +727,7 @@ class DBV400(SerialDevice):
         if(self.UID_SET == True):
             self.STATUS_REQUEST[4] = self.UID;
             self.STATUS_REQUEST[3] = 0x10;
-            print("UID ALREADY SET")
+            #print("UID ALREADY SET")
         else:
             self.STATUS_REQUEST[4] = 0x00
             self.STATUS_REQUEST[3] = 0x00

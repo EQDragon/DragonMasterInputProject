@@ -13,6 +13,7 @@ class DragonMasterDeviceManager:
     DRAGON_DEVICE_INPUT_TEXT_FILE = "DragonMasterInput.txt"
     DRAGON_DEVICE_OUTPUT_TEXT_FILE = "DragonMasterOutput.txt"
     POLL_TIME_IN_SECONDS = 2
+    INITIAL_START_UP_DELAY = 1
 
     def __init__(self):
 
@@ -27,7 +28,7 @@ class DragonMasterDeviceManager:
         self.DRAGON_DEVICE_OUTPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_OUTPUT_TEXT_FILE)
 
         print ("Program initializing. Please be patient. This will take 20 seconds....")
-        sleep(20)
+        sleep(self.INITIAL_START_UP_DELAY)
 
 
         #Thread for writing to text file
@@ -389,7 +390,7 @@ class DragonMasterDeviceManager:
     def print_all_player_station_status(self):
         set_string_length("Dragon Master Status", lengthOfString = 60, spacingChar = '=')
         player_index = 0
-        for key, playerStation in self.deviceDictionary.items:
+        for key, playerStation in self.deviceDictionary.items():
             player_index += 1
             print set_string_length("Player Station " + str(player_index), lengthOfString = 60, spacingChar = '-')
             self.print_player_station_status(key)
@@ -403,15 +404,52 @@ class DragonMasterDeviceManager:
             return
 
         playerStation = self.deviceDictionary[playerStationParentDeviceKey]
-        print set_string_length_multiple("Player Station Path: " + playerStationParentDeviceKey)
-        set_string_length_multiple("Device Type", "|", lengthOfString=15) + set_string_length_multiple("Port/ID", "|", lengthOfString=15) + set_string_length_multiple("Device Status", "|", lengthOfString=15)
+        print ("Player Station Path: " + playerStationParentDeviceKey)
+        print set_string_length_multiple("|Device Type", "|", lengthOfString=20) +\
+        set_string_length_multiple("Port/ID", "|", lengthOfString=15) + \
+        set_string_length_multiple("Device Status", "|", lengthOfString=25)
+
+
         drax = playerStation.draxboardDevice
         dbv = playerStation.dbvDevice
         joy = playerStation.joystickDevice
 
-        set_string_length()
-        pass
 
+        if drax == None:
+            deviceID = "--"
+            deviceState = "Disconnected"
+        else:
+            deviceID = drax.deviceName
+            deviceState = drax.get_state()
+        self.print_single_status_line("Draxboard", deviceID, deviceState)
+
+
+        if dbv == None:
+            deviceID = "--"
+            deviceState = "Disconnected"
+        else:
+            deviceID = dbv.deviceName
+            deviceState = dbv.get_state()
+
+        self.print_single_status_line("DBV-400", deviceID, deviceState)
+
+        if joy == None:
+            deviceID = "--"
+            deviceState = "Disconnected"
+        else:
+            deviceID = joy.joystickID
+            deviceState = joy.get_state()
+        self.print_single_status_line("Joystick", str(deviceID), deviceState)
+
+
+
+
+        return
+
+    def print_single_status_line(self, deviceType, deviceID, deviceState):
+        print set_string_length_multiple(deviceType, "|", lengthOfString=20) + \
+              set_string_length_multiple(deviceID, "|", lengthOfString=15) + \
+              set_string_length_multiple(deviceState, "|", lengthOfString=25)
 
     """
     Calls the idle function in the DBV400 device that matches the comport provided
@@ -498,6 +536,13 @@ class DragonMasterDevice:
     def has_device_errored(self):
         return False
 
+    """
+    Use this method to return a ststring that indicates the current state of the device.
+    Try to keep it under 25 characters...
+    """
+    def get_state(self):
+        return "Active"
+
 
 """
 An instance of DragonMasterDevice that handles all the functionality of the joystick devices that are plugged into the player station
@@ -518,7 +563,7 @@ class JoystickDevice(DragonMasterDevice):
     """
     def set_parent_device_path(self):
         for dev in self.deviceManager.deviceContext.list_devices():
-            if dev.sys_name == ("js" + str(self.joystickID)):
+            if dev.sys_name == ("js" + str(self.joystickID + 1)):
                 self.parentPath = dev.parent.parent.parent.parent.parent.device_path#So many parents!
                 return
         return
@@ -628,7 +673,7 @@ def set_string_length(string1, lengthOfString = 60, spacingChar = ' '):
     remainingLength = lengthOfString - len(string1)
     newStringToReturn = ''
     if remainingLength > 0:
-        newStringToReturn = spacingChar * int(remainingLength)
+        newStringToReturn = spacingChar * int(remainingLength / 2)
     newStringToReturn = newStringToReturn + string1
     remainingLength = lengthOfString - len(newStringToReturn)
     if remainingLength > 0:
