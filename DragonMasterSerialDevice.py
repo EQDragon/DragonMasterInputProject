@@ -569,7 +569,7 @@ class DBV400(SerialDevice):
     def set_parent_device_path(self):
         for dev in self.deviceManager.deviceContext.list_devices():
             if self.deviceName in dev.device_path.decode('utf-8'):
-                self.parentPath = dev.parent.parent.device_path
+                self.parentPath = dev.parent.parent.parent.device_path
                 return;
 
         return 
@@ -596,6 +596,7 @@ class DBV400(SerialDevice):
             self.idle_dbv()
         self.STATE = self.get_state()
         self.PASSIVE_RECEIVE = 1
+        self.idle_dbv()
         return
 
     """
@@ -726,7 +727,7 @@ class DBV400(SerialDevice):
     """
     def get_state(self):
         self.PASSIVE_RECEIVE = 0
-        currentState = None
+        currentState = self.ERROR_STATE
         flush_serial_device(self)
         if(self.UID_SET == True):
             self.STATUS_REQUEST[4] = self.UID;
@@ -764,7 +765,7 @@ class DBV400(SerialDevice):
             currentState = self.ERROR_STATE
         elif len(inputBytes) >= 12 and inputBytes[10].encode('hex') == '00' and inputBytes[11].encode('hex') == '12' and inputBytes[12].encode('hex') == '11':
             currentState = self.CLEAR_STATE
-        print(currentState)
+        #print(currentState)
         self.PASSIVE_RECEIVE = 1
         if(inputBytes != None and len(inputBytes) >= 5 and str(inputBytes[5].encode('hex')).find("8") == 0):
             self.POWER_ACK[5] = inputBytes[5]

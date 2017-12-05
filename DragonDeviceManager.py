@@ -332,6 +332,25 @@ class DragonMasterDeviceManager:
 
     ########################################################################
 
+    ########################Get Methods#####################################
+
+    def get_draxboard_from_parent_key(self, parentDevicePathKey):
+        if self.deviceDictionary.has_key(parentDevicePathKey):
+            return self.deviceDictionary[parentDevicePathKey].draxboardDevice
+        return None
+
+    def get_dbv400_from_parent_key(self, parentDevicePathKey):
+        if self.deviceDictionary.has_key(parentDevicePathKey):
+            return self.deviceDictionary[parentDevicePathKey].dbvDevice
+        return None
+
+    def get_joystick_from_parent_key(self, parentDevicePathKey):
+        if self.deviceDictionary.has_key(parentDevicePathKey):
+            return self.deviceDictionary[parentDevicePathKey].joystickDevice
+        return None
+
+    #########################################################################
+
     ######################EVENT METHODS#####################################
     """
     Writes a new event to a queue that will be written to a text file for later use.
@@ -349,7 +368,7 @@ class DragonMasterDeviceManager:
     """
     def write_to_text_input(self):
         if self.eventQueue.qsize() > 0:
-            if not os.path.isfile(self.DRAGON_DEVICE_INPUT_TEXT_FILE):
+            if os.path.isfile(self.DRAGON_DEVICE_INPUT_TEXT_FILE):
                 inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
                 print inputTextFileInfo.st_size
 
