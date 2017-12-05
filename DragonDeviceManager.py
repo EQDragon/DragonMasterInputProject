@@ -3,10 +3,9 @@ import DragonMasterSerialDevice
 from time import sleep
 import Queue
 import pygame
-import syslog
 import os
 import pyudev
-#from escpos.connections import getUSBPrinter
+
 
 class DragonMasterDeviceManager:
 
@@ -24,6 +23,7 @@ class DragonMasterDeviceManager:
         self.playerStationKeyOrder = []#This list will hold the order of all the player stations that are currently avaiable. By default the order will be set to the order it was added
         #print (os.path.realpath(__file__))
 
+        #Set the Input and Output textfiles to the proper locations
         self.DRAGON_DEVICE_INPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_INPUT_TEXT_FILE)
         self.DRAGON_DEVICE_OUTPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_OUTPUT_TEXT_FILE)
 
@@ -265,7 +265,7 @@ class DragonMasterDeviceManager:
 
 
         for joystick in get_all_joystick_devices():
-            if joystick != None and not self.manager_contains_joystick(joystick.get_id()):
+            if joystick != None and not self.manager_contains_joystick_device(joystick):
                 self.add_device(JoystickDevice(deviceManager=self, pygameJoystick=joystick))
 
 
@@ -323,7 +323,7 @@ class DragonMasterDeviceManager:
     Make sure that the parameter being passed in is a pygame joystick object. This will be compared to other pygame joystick objects
     """
     def manager_contains_joystick_device(self, joystickDevice):
-        for key, playerStation in self.deviceDictionary.items:
+        for key, playerStation in self.deviceDictionary.items():
             if playerStation != None and playerStation.joystickDevice != None:
                 if playerStation.joystickDevice.pygameJoystick.get_id() == joystickDevice.get_id():
                     return True
