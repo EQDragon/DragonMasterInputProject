@@ -685,6 +685,10 @@ class DBV400(SerialDevice):
             self.set_uid()
             self.reset_dbv()
             self.idle_dbv()
+        if self.STATE == self.CLEAR_STATE:
+            self.get_state()
+            self.set_uid()
+            self.reset_dbv()
 
         self.INIT = 0
         self.PASSIVE_RECEIVE = 1
