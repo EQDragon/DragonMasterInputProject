@@ -57,7 +57,6 @@ class DragonMasterDeviceManager:
 
 
     ######################THREADED METHODS#######################################
-
     """
     Thread that is used to write all the current events to a text file
     Runs roughly 60 times a second
@@ -250,23 +249,20 @@ class DragonMasterDeviceManager:
         return
 
     """
-    Polls all attached devices and checks if there are any malfunctions among any of the devices.
-    Will remove any device that is currently malfunctioned
-    """
-    def poll_malfunctioned_devices(self):
-        for dragonMasterDevice in self.deviceList:
-            if dragonMasterDevice.has_device_errored():
-                pass
-
-        return
-
-    """
     Due to the fact that if a controller disconnects it may change the order they are displayed in pyudev,
     it is necessary to reinitialize all controllers in their new current order and restart pygame
     """
     def initialize_all_joysticks(self):
+        for dev in self.deviceList:#First we want to remove all instances of the current joystick devices. This is due to the requirement to init joysticks
+                                   #once we reinitialize the pygame instance.
+            if dev != None and isinstance(dev, JoystickDevice):
+                self.remove_device(dev)
+
         pygame.joystick.quit()
         pygame.joystick.init()
+
+        
+
 
         for joystick in get_all_joystick_devices():
             if joystick != None and not self.manager_contains_joystick(joystick.get_id()):
@@ -275,18 +271,6 @@ class DragonMasterDeviceManager:
 
 
     #############Contains Methods############################################
-
-    """
-    Use this method to check that the this joystickID is not already contained within
-    """
-    def manager_contains_joystick(self, joystickID):
-
-        for dev in self.deviceList:
-            if isinstance(dev, JoystickDevice):
-                if dev.pygameJoystick.get_id() == joystickID:
-                    return True
-        return False
-
 
     """
     Use this method to check that the Draxboard Device that is being checked does not already exist in
@@ -405,9 +389,9 @@ class DragonMasterDeviceManager:
 
         playerStation = self.deviceDictionary[playerStationParentDeviceKey]
         print ("Player Station Path: " + playerStationParentDeviceKey)
-        print set_string_length_multiple("|Device Type", "|", lengthOfString=20) +\
-        set_string_length_multiple("Port/ID", "|", lengthOfString=15) + \
-        set_string_length_multiple("Device Status", "|", lengthOfString=25)
+        print set_string_length_multiple("|DEVICE TYPE", "|", lengthOfString=20) +\
+        set_string_length_multiple("PORT/ID", "|", lengthOfString=15) + \
+        set_string_length_multiple("DEVICE STATUS", "|", lengthOfString=25)
 
 
         drax = playerStation.draxboardDevice
@@ -447,7 +431,7 @@ class DragonMasterDeviceManager:
         return
 
     def print_single_status_line(self, deviceType, deviceID, deviceState):
-        print set_string_length_multiple(deviceType, "|", lengthOfString=20) + \
+        print set_string_length_multiple("|"+deviceType, "|", lengthOfString=20) + \
               set_string_length_multiple(deviceID, "|", lengthOfString=15) + \
               set_string_length_multiple(deviceState, "|", lengthOfString=25)
 
@@ -603,7 +587,9 @@ class JoystickDevice(DragonMasterDevice):
         return False
 
 
-
+"""
+TODO: Printer functions. Need to figure how to enumerate printer devices
+"""
 class PrinterDevice(DragonMasterDevice):
 
     def __init__(self, deviceManager):
@@ -637,7 +623,8 @@ class PlayerStation:
 
 ###############Device Search Methods###########################
 """
-Gets all valid joystick devices that are connected to the machine
+Gets all valid joystick devices that are connected to the machine. 
+Use this to find the pygame instance of a joystick objects
 """
 def get_all_joystick_devices():
     JOYSTICK_DEVICE_NAME = "Ultimarc UltraStik Ultimarc Ultra-Stik Player 1"
