@@ -3,16 +3,16 @@ import DragonMasterSerialDevice
 from time import sleep
 import Queue
 import pygame
-import syslog
 import os
 import pyudev
-#from escpos.connections import getUSBPrinter
+
 
 class DragonMasterDeviceManager:
 
     DRAGON_DEVICE_INPUT_TEXT_FILE = "DragonMasterInput.txt"
     DRAGON_DEVICE_OUTPUT_TEXT_FILE = "DragonMasterOutput.txt"
     POLL_TIME_IN_SECONDS = 2
+    INITIAL_START_UP_DELAY = 1
 
     def __init__(self):
 
@@ -20,15 +20,27 @@ class DragonMasterDeviceManager:
         self.deviceList = []
         self.deviceDictionary = {}
         self.deviceContext = pyudev.Context()
+        self.playerStationKeyOrder = []#This list will hold the order of all the player stations that are currently avaiable. By default the order will be set to the order it was added
+        #print (os.path.realpath(__file__))
 
+        #Set the Input and Output textfiles to the proper locations
+        self.DRAGON_DEVICE_INPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_INPUT_TEXT_FILE)
+        self.DRAGON_DEVICE_OUTPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_OUTPUT_TEXT_FILE)
 
+        print ("Program initializing. Please be patient. This will take 20 seconds....")
+        sleep(self.INITIAL_START_UP_DELAY)
 
 
         #Thread for writing to text file
-        sleep(20)
         self.writePollingThread = threading.Thread(target=self.poll_write_to_input_text)
         self.writePollingThread.daemon = True
         self.writePollingThread.start()
+
+        #Thread To help with polling commans that comme from the DragonMaster game
+        self.readPollingThread = threading.Thread(target=self.poll_read_from_output_text)
+        self.readPollingThread.daemon = True
+        self.readPollingThread.start()
+
 
         #Thread for polling devices to make sure they are not malfunctioning
         self.debugCommandThread = threading.Thread(target=self.poll_debug_commands)
@@ -45,7 +57,6 @@ class DragonMasterDeviceManager:
 
 
     ######################THREADED METHODS#######################################
-
     """
     Thread that is used to write all the current events to a text file
     Runs roughly 60 times a second
@@ -94,7 +105,10 @@ class DragonMasterDeviceManager:
                     print "\'" + command + "\' is not a valid command"
         return
 
-
+    """
+    This method is used to check the status of all currently connected devices and make sure they are not malfunctioning.
+    It is also used to add devices if they are connected to it later on after the program has started
+    """
     def poll_devices(self):
         while True:
             self.deviceContext = pyudev.Context() #Want to reinitialize the context of the system at every update
@@ -103,6 +117,32 @@ class DragonMasterDeviceManager:
 
             self.search_devices()
             sleep(2)
+
+            #After we poll for any new devices, we will check if any of the devices have errored. If they have we remove them from the list
+            #in order to reinitialize them and hopefully reestablish connection
+            tempRemoveDeviceList = []
+            for dev in self.deviceList:
+                if dev.has_device_errored():
+                    tempRemoveDeviceList.append(dev)
+
+            for dev in tempRemoveDeviceList:
+                self.remove_device(dev)
+        return
+
+    """
+    This method is used to poll for any commands that come straight from external programs such
+    as our Dragon Master Unity game
+    """
+    def poll_read_from_output_text(self):
+        while True:
+            if os.path.isfile(self.DRAGON_DEVICE_OUTPUT_TEXT_FILE):
+                outStat = os.stat(self.DRAGON_DEVICE_OUTPUT_TEXT_FILE)
+                if outStat.st_size:
+                    pass
+            sleep(.016)
+
+        return
+
 
 
 
@@ -189,7 +229,6 @@ class DragonMasterDeviceManager:
         #Get All Drax Devices
         previousDeviceCount = len(self.deviceList)
 
-
         DragonMasterSerialDevice.get_all_drax_comports()
         for element in DragonMasterSerialDevice.get_all_drax_comports():
             if element != None and element.device != None:
@@ -210,43 +249,28 @@ class DragonMasterDeviceManager:
         return
 
     """
-    Polls all attached devices and checks if there are any malfunctions among any of the devices.
-    Will remove any device that is currently malfunctioned
-    """
-    def poll_malfunctioned_devices(self):
-        for dragonMasterDevice in self.deviceList:
-            if dragonMasterDevice.has_device_errored():
-                pass
-
-        return
-
-    """
     Due to the fact that if a controller disconnects it may change the order they are displayed in pyudev,
     it is necessary to reinitialize all controllers in their new current order and restart pygame
     """
     def initialize_all_joysticks(self):
+        for dev in self.deviceList:#First we want to remove all instances of the current joystick devices. This is due to the requirement to init joysticks
+                                   #once we reinitialize the pygame instance.
+            if dev != None and isinstance(dev, JoystickDevice):
+                self.remove_device(dev)
+
         pygame.joystick.quit()
         pygame.joystick.init()
 
+        
+
+
         for joystick in get_all_joystick_devices():
-            if joystick != None and not self.manager_contains_joystick(joystick.get_id()):
+            if joystick != None and not self.manager_contains_joystick_device(joystick):
                 self.add_device(JoystickDevice(deviceManager=self, pygameJoystick=joystick))
 
 
 
     #############Contains Methods############################################
-
-    """
-    Use this method to check that the this joystickID is not already contained within
-    """
-    def manager_contains_joystick(self, joystickID):
-
-        for dev in self.deviceList:
-            if isinstance(dev, JoystickDevice):
-                if dev.pygameJoystick.get_id() == joystickID:
-                    return True
-        return False
-
 
     """
     Use this method to check that the Draxboard Device that is being checked does not already exist in
@@ -299,7 +323,7 @@ class DragonMasterDeviceManager:
     Make sure that the parameter being passed in is a pygame joystick object. This will be compared to other pygame joystick objects
     """
     def manager_contains_joystick_device(self, joystickDevice):
-        for key, playerStation in self.deviceDictionary.items:
+        for key, playerStation in self.deviceDictionary.items():
             if playerStation != None and playerStation.joystickDevice != None:
                 if playerStation.joystickDevice.pygameJoystick.get_id() == joystickDevice.get_id():
                     return True
@@ -317,7 +341,6 @@ class DragonMasterDeviceManager:
     """
     def add_event_to_queue(self, eventString):
         self.eventQueue.put(eventString)
-
         return
 
     """
@@ -326,8 +349,9 @@ class DragonMasterDeviceManager:
     """
     def write_to_text_input(self):
         if self.eventQueue.qsize() > 0:
-            inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
-            print inputTextFileInfo.st_size
+            if not os.path.isfile(self.DRAGON_DEVICE_INPUT_TEXT_FILE):
+                inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
+                print inputTextFileInfo.st_size
 
 
 
@@ -344,19 +368,72 @@ class DragonMasterDeviceManager:
         print "\'reset\' - Enter this command followed by the comport of the DBV400 to reset the device. Will be set to idle after reset is complete"
         print set_string_length("-", lengthOfString=60, spacingChar='-')
 
+    """
+    Use this method to print out the status of every device that is currently connected to each player station.  primarily used to debugging
+    """
     def print_all_player_station_status(self):
-        pass
+        set_string_length("Dragon Master Status", lengthOfString = 60, spacingChar = '=')
+        player_index = 0
+        for key, playerStation in self.deviceDictionary.items():
+            player_index += 1
+            print set_string_length("Player Station " + str(player_index), lengthOfString = 60, spacingChar = '-')
+            self.print_player_station_status(key)
+        return
 
+    """
+    Prints one single instance of a player station based on the playerStation dictionary key
+    """
     def print_player_station_status(self, playerStationParentDeviceKey):
         if not self.deviceDictionary.has_key(playerStationParentDeviceKey):
             return
+
         playerStation = self.deviceDictionary[playerStationParentDeviceKey]
+        print ("Player Station Path: " + playerStationParentDeviceKey)
+        print set_string_length_multiple("|DEVICE TYPE", "|", lengthOfString=20) +\
+        set_string_length_multiple("PORT/ID", "|", lengthOfString=15) + \
+        set_string_length_multiple("DEVICE STATUS", "|", lengthOfString=25)
+
 
         drax = playerStation.draxboardDevice
         dbv = playerStation.dbvDevice
         joy = playerStation.joystickDevice
-        pass
 
+
+        if drax == None:
+            deviceID = "--"
+            deviceState = "Disconnected"
+        else:
+            deviceID = drax.deviceName
+            deviceState = drax.get_state()
+        self.print_single_status_line("Draxboard", deviceID, deviceState)
+
+
+        if dbv == None:
+            deviceID = "--"
+            deviceState = "Disconnected"
+        else:
+            deviceID = dbv.deviceName
+            deviceState = dbv.get_state()
+
+        self.print_single_status_line("DBV-400", deviceID, deviceState)
+
+        if joy == None:
+            deviceID = "--"
+            deviceState = "Disconnected"
+        else:
+            deviceID = joy.joystickID
+            deviceState = joy.get_state()
+        self.print_single_status_line("Joystick", str(deviceID), deviceState)
+
+
+
+
+        return
+
+    def print_single_status_line(self, deviceType, deviceID, deviceState):
+        print set_string_length_multiple("|"+deviceType, "|", lengthOfString=20) + \
+              set_string_length_multiple(deviceID, "|", lengthOfString=15) + \
+              set_string_length_multiple(deviceState, "|", lengthOfString=25)
 
     """
     Calls the idle function in the DBV400 device that matches the comport provided
@@ -443,6 +520,13 @@ class DragonMasterDevice:
     def has_device_errored(self):
         return False
 
+    """
+    Use this method to return a ststring that indicates the current state of the device.
+    Try to keep it under 25 characters...
+    """
+    def get_state(self):
+        return "Active"
+
 
 """
 An instance of DragonMasterDevice that handles all the functionality of the joystick devices that are plugged into the player station
@@ -463,7 +547,7 @@ class JoystickDevice(DragonMasterDevice):
     """
     def set_parent_device_path(self):
         for dev in self.deviceManager.deviceContext.list_devices():
-            if dev.sys_name == ("js" + str(self.joystickID)):
+            if dev.sys_name == ("js" + str(self.joystickID + 1)):
                 self.parentPath = dev.parent.parent.parent.parent.parent.device_path#So many parents!
                 return
         return
@@ -503,7 +587,9 @@ class JoystickDevice(DragonMasterDevice):
         return False
 
 
-
+"""
+TODO: Printer functions. Need to figure how to enumerate printer devices
+"""
 class PrinterDevice(DragonMasterDevice):
 
     def __init__(self, deviceManager):
@@ -537,7 +623,8 @@ class PlayerStation:
 
 ###############Device Search Methods###########################
 """
-Gets all valid joystick devices that are connected to the machine
+Gets all valid joystick devices that are connected to the machine. 
+Use this to find the pygame instance of a joystick objects
 """
 def get_all_joystick_devices():
     JOYSTICK_DEVICE_NAME = "Ultimarc UltraStik Ultimarc Ultra-Stik Player 1"
@@ -555,12 +642,9 @@ def get_all_joystick_devices():
 Gets all valid printers that are connected to the machine. Searches for only Custom TG02-H Ticket printers
 """
 def get_all_printers():
-    printer = getUSBPrinter()(idVendor=0x0dd4,  # USB vendor and product Ids for Bixolon SRP-350plus
-                              idProduct=0x0186,  # printer
-                                inputEndPoint = 0x81,
-                    outputEndPoint = 0x01)
 
-    print printer
+
+
 
     return
 ##############################################################
@@ -576,7 +660,7 @@ def set_string_length(string1, lengthOfString = 60, spacingChar = ' '):
     remainingLength = lengthOfString - len(string1)
     newStringToReturn = ''
     if remainingLength > 0:
-        newStringToReturn = spacingChar * int(remainingLength)
+        newStringToReturn = spacingChar * int(remainingLength / 2)
     newStringToReturn = newStringToReturn + string1
     remainingLength = lengthOfString - len(newStringToReturn)
     if remainingLength > 0:

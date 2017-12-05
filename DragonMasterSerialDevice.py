@@ -79,9 +79,7 @@ def write_serial_device_wait_multiple_read(dragonMasterSerialDevice, dataToWrite
 
     try:
         serialDevice.write(dataToWrite)
-        print("WRITE:",dataToWrite)
-
-
+        #print("WRITE:",dataToWrite)
     except:
         print ("There was an error writing to " + dragonMasterSerialDevice.to_string())
         dragonMasterSerialDevice.blockReadEvent = False
@@ -110,7 +108,7 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
     maxMillisecondsConvertToSeconds = float(maxMillisecondsToWait) / 1000
 
     try:
-        print('WRITE:',dataToWrite)
+        #print('WRITE:',dataToWrite)
         serialDevice.write(dataToWrite)
 
     except:
@@ -130,7 +128,7 @@ def write_serial_device_wait_for_read(dragonMasterSerialDevice, dataToWrite, min
                 inwaiting = serialDevice.in_waiting
                 readLine = dragonMasterSerialDevice.serialDevice.read(size = inwaiting)
                 dragonMasterSerialDevice.blockReadEvent = False
-                print('READ:',readLine.encode('hex'))
+                #print('READ:',readLine.encode('hex'))
                 return readLine
             except:
                 print("READ ERROR")
@@ -147,7 +145,7 @@ safely write to a serial port. This method will not return any read values
 def write_serial_device(dragonMasterSerialDevice, dataToWrite):
     serialDevice = dragonMasterSerialDevice.serialDevice
     try:
-        print('WRITE:', dataToWrite)
+        #print('WRITE:', dataToWrite)
         serialDevice.write(dataToWrite)
 
     except:
@@ -165,7 +163,7 @@ def read_serial_device(dragonMasterSerialDevice, delayBeforeReadInMilliseconds =
         inwaiting = dragonMasterSerialDevice.serialDevice.in_waiting
         #print("READ IN WAITING1:",str(dragonMasterSerialDevice.serialDevice.in_waiting))
         readLine = dragonMasterSerialDevice.serialDevice.read(size=inwaiting)
-        print("READ:",readLine.encode('hex'))
+        #print("READ:",readLine.encode('hex'))
         return readLine
     except:
         print ('There was an error reading ' + dragonMasterSerialDevice.serialDevice.port)
@@ -384,6 +382,15 @@ class Draxboard(SerialDevice):
             return False
         return True
 
+    def get_state(self):
+        try:
+            if self.serialDevice.is_open:
+                return "Active"
+            else:
+                return "Port Closed"
+        except:
+            return "ERROR"
+
 
     ##############################################################################################################    
     """
@@ -400,7 +407,8 @@ class Draxboard(SerialDevice):
                 inputByteString += '1'
             else:
                 inputByteString += '0'
-        print ('DRAX|' + inputByteString + '|' + self.parentPath)
+
+        self.deviceManager.add_event_to_queue('DRAX|' + inputByteString + '|' + self.parentPath)
 
     def to_string(self):
         return "Draxboard (" + self.comport + ")"
@@ -470,7 +478,7 @@ class DBV400(SerialDevice):
             
         if self.INIT == 0 and self.PASSIVE_RECEIVE == 1:
             read = read_serial_device(self)
-            print("PASS REC")
+            #print("PASS REC")
 
     ######################Start If Statements#############################
             if read != None and len(read) >= 10 and read[8].encode('hex') == '55' and read[9].encode('hex') == '53' and read[10].encode('hex') == '44':
@@ -487,7 +495,7 @@ class DBV400(SerialDevice):
                 elif read == None:
                     return
                 read = write_serial_device_wait_for_read(self, self.VEND_VALID_ACK, 1, 600)
-                print('denomination = ',denomination[0])  # Return denomination here
+                #print('denomination = ',denomination[0])  # Return denomination here
                 if len(read) > 0:
                     self.INHIBIT_ACK[5] = read[5]
                 read = write_serial_device_wait_for_read(self, self.INHIBIT_ACK, 1, 500)
@@ -723,7 +731,7 @@ class DBV400(SerialDevice):
         if(self.UID_SET == True):
             self.STATUS_REQUEST[4] = self.UID;
             self.STATUS_REQUEST[3] = 0x10;
-            print("UID ALREADY SET")
+            #print("UID ALREADY SET")
         else:
             self.STATUS_REQUEST[4] = 0x00
             self.STATUS_REQUEST[3] = 0x00
