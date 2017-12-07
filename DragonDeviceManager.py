@@ -12,7 +12,7 @@ class DragonMasterDeviceManager:
     DRAGON_DEVICE_INPUT_TEXT_FILE = "DragonMasterInput.txt"
     DRAGON_DEVICE_OUTPUT_TEXT_FILE = "DragonMasterOutput.txt"
     POLL_TIME_IN_SECONDS = 2
-    INITIAL_START_UP_DELAY = 1
+    INITIAL_START_UP_DELAY = 15
 
     def __init__(self):
 
@@ -359,6 +359,8 @@ class DragonMasterDeviceManager:
 
     """
     def add_event_to_queue(self, eventString):
+        print eventString#prints string for debugging purposes
+
         self.eventQueue.put(eventString)
         return
 
@@ -367,11 +369,24 @@ class DragonMasterDeviceManager:
     other programs
     """
     def write_to_text_input(self):
-        if self.eventQueue.qsize() > 0:
-            if os.path.isfile(self.DRAGON_DEVICE_INPUT_TEXT_FILE):
-                inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
-                print inputTextFileInfo.st_size
 
+        if not os.path.isfile(self.DRAGON_DEVICE_INPUT_TEXT_FILE):
+            open(self.DRAGON_DEVICE_INPUT_TEXT_FILE, 'a').close()
+
+
+        inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
+        try:
+            inputFile = open(self.DRAGON_DEVICE_INPUT_TEXT_FILE, 'w')
+            while not self.eventQueue.empty():
+                inputFile.write(self.eventQueue.get())
+
+            for key, playerStation in self.deviceDictionary.items():
+                inputFile.write(playerStation.joystickDevice.get_joystick_axes())
+            inputFile.close()
+        except:
+            if inputFile != None and not inputFile.closed:
+                inputFile.close()
+            return
 
 
 
@@ -597,8 +612,9 @@ class JoystickDevice(DragonMasterDevice):
         try:
             x = self.pygameJoystick.get_axis(0)
             y = self.pygameJoystick.get_axis(1)
+            joyAxisString = str(x) + "," + str(y)
 
-            return (x, y)
+            return "JOY|" + joyAxisString + "|" + self.parentPath
         except:
             return None
 

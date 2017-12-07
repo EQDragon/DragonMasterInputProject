@@ -26,15 +26,6 @@ dragonMasterDeviceManager = DragonDeviceManager.DragonMasterDeviceManager()
 
 
 while True:
-	#pygame.joystick.quit()
-	#pygame.joystick.init()
-	#pygame.event.pump()
-	#print pygame.joystick.get_count()
-	#for i in range(len(joystickList)):
-
-	#	if devicePathList[i] != None:
-	#		print devicePathList[i] + ":  X-" + str(joystickList[i].get_axis(0))
-
-	#sleep(1)
+	
 	pass
 

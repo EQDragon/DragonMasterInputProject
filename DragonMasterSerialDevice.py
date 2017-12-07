@@ -496,6 +496,7 @@ class DBV400(SerialDevice):
                     return
                 read = write_serial_device_wait_for_read(self, self.VEND_VALID_ACK, 1, 600)
                 #print('denomination = ',denomination[0])  # Return denomination here
+                self.on_bill_inserted(denomination[0])
                 if len(read) > 0:
                     self.INHIBIT_ACK[5] = read[5]
                 read = write_serial_device_wait_for_read(self, self.INHIBIT_ACK, 1, 500)
@@ -543,6 +544,13 @@ class DBV400(SerialDevice):
                 self.SET_UID[8] = 0x01
                 self.start_dbv()
                 return
+
+    def on_bill_inserted(self, dollarValue):
+        drax = self.deviceManager.get_draxboard_from_parent_key(self.parentPath)
+        drax.increment_meter(amountToIncrement=dollarValue * 100, isInMeter=True)
+
+        self.deviceManager.add_event_to_queue("DBV|" + str(dollarValue) + "|" + self.parentPath)
+        return
 
 
     def start_device(self):
@@ -666,7 +674,7 @@ class DBV400(SerialDevice):
         while self.STATE == self.POWER_UP_NACK_STATE:
             readLine = bytearray(read_serial_device(self, delayBeforeReadInMilliseconds=300))
             if len(readLine) > 0:
-                print(readLine)
+                #print(readLine)
                 self.POWER_ACK[5] = readLine[5]
             flush_serial_device(self)
             write_serial_device(self, self.POWER_ACK)
