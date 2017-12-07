@@ -21,11 +21,16 @@ class DragonMasterDeviceManager:
         self.deviceDictionary = {}
         self.deviceContext = pyudev.Context()
         self.playerStationKeyOrder = []#This list will hold the order of all the player stations that are currently avaiable. By default the order will be set to the order it was added
+
         #print (os.path.realpath(__file__))
 
         #Set the Input and Output textfiles to the proper locations
         self.DRAGON_DEVICE_INPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_INPUT_TEXT_FILE)
         self.DRAGON_DEVICE_OUTPUT_TEXT_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.DRAGON_DEVICE_OUTPUT_TEXT_FILE)
+        try:
+            open(self.DRAGON_DEVICE_INPUT_TEXT_FILE, 'w').close()
+        except:
+            pass
 
         print ("Program initializing. Please be patient. This will take 20 seconds....")
         sleep(self.INITIAL_START_UP_DELAY)
@@ -371,18 +376,21 @@ class DragonMasterDeviceManager:
     def write_to_text_input(self):
 
         if not os.path.isfile(self.DRAGON_DEVICE_INPUT_TEXT_FILE):
-            open(self.DRAGON_DEVICE_INPUT_TEXT_FILE, 'a').close()
+            open(self.DRAGON_DEVICE_INPUT_TEXT_FILE, 'w').close()
 
 
         inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
         try:
-            inputFile = open(self.DRAGON_DEVICE_INPUT_TEXT_FILE, 'w')
-            while not self.eventQueue.empty():
-                inputFile.write(self.eventQueue.get())
+            if inputTextFileInfo.st_size <= 0:
+                inputFile = open(self.DRAGON_DEVICE_INPUT_TEXT_FILE, 'w')
+                while not self.eventQueue.empty():
+                    inputFile.write(self.eventQueue.get())
 
-            for key, playerStation in self.deviceDictionary.items():
-                inputFile.write(playerStation.joystickDevice.get_joystick_axes())
-            inputFile.close()
+                for key, playerStation in self.deviceDictionary.items():
+                    if playerStation != None and playerStation.joystickDevice != None:
+                        inputFile.write(playerStation.joystickDevice.get_joystick_axes())
+                inputFile.close()
+                print ("I wrote to the file")
         except:
             if inputFile != None and not inputFile.closed:
                 inputFile.close()
@@ -610,8 +618,8 @@ class JoystickDevice(DragonMasterDevice):
     """
     def get_joystick_axes(self):
         try:
-            x = self.pygameJoystick.get_axis(0)
-            y = self.pygameJoystick.get_axis(1)
+            x = int(self.pygameJoystick.get_axis(0) * 100)
+            y = int(self.pygameJoystick.get_axis(1) * 100)
             joyAxisString = str(x) + "," + str(y)
 
             return "JOY|" + joyAxisString + "|" + self.parentPath
