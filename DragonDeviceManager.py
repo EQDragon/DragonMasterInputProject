@@ -390,7 +390,7 @@ class DragonMasterDeviceManager:
                     if playerStation != None and playerStation.joystickDevice != None:
                         inputFile.write(playerStation.joystickDevice.get_joystick_axes())
                 inputFile.close()
-                print ("I wrote to the file")
+                
         except:
             if inputFile != None and not inputFile.closed:
                 inputFile.close()
