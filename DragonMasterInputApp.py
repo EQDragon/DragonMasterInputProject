@@ -8,7 +8,6 @@ from time import sleep
 #context = pyudev.Context
 
 
-
 dragonMasterDeviceManager = DragonDeviceManager.DragonMasterDeviceManager()
 
 

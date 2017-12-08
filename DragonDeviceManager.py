@@ -30,6 +30,7 @@ class DragonMasterDeviceManager:
         try:
             open(self.DRAGON_DEVICE_INPUT_TEXT_FILE, 'w').close()
         except:
+
             pass
 
         print ("Program initializing. Please be patient. This will take 20 seconds....")
@@ -389,11 +390,13 @@ class DragonMasterDeviceManager:
                     eventToAdd = self.eventQueue.get()
                     #print eventToAdd
                     inputFile.write(eventToAdd + '\n')
-
+                pygame.event.pump()
                 for key, playerStation in self.deviceDictionary.items():
                     if playerStation != None and playerStation.joystickDevice != None:
                         inputFile.write(playerStation.joystickDevice.get_joystick_axes() + '\n')
+
                 inputFile.close()
+
                 
         except:
             if inputFile != None and not inputFile.closed:
@@ -674,6 +677,10 @@ Gets all valid joystick devices that are connected to the machine.
 Use this to find the pygame instance of a joystick objects
 """
 def get_all_joystick_devices():
+    pygame.quit()
+    pygame.joystick.quit()
+    pygame.init()
+    pygame.joystick.init()
     JOYSTICK_DEVICE_NAME = "Ultimarc UltraStik Ultimarc Ultra-Stik Player 1"
     joystickList = []
     for j in range(pygame.joystick.get_count()):
