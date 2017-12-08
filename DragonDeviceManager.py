@@ -9,10 +9,10 @@ import pyudev
 
 class DragonMasterDeviceManager:
 
-    DRAGON_DEVICE_INPUT_TEXT_FILE = "DragonMasterInput.txt"
+    DRAGON_DEVICE_INPUT_TEXT_FILE = "DragonDeviceInput.txt"
     DRAGON_DEVICE_OUTPUT_TEXT_FILE = "DragonMasterOutput.txt"
     POLL_TIME_IN_SECONDS = 2
-    INITIAL_START_UP_DELAY = 15
+    INITIAL_START_UP_DELAY = 2
 
     def __init__(self):
 
@@ -381,14 +381,18 @@ class DragonMasterDeviceManager:
 
         inputTextFileInfo = os.stat(self.DRAGON_DEVICE_INPUT_TEXT_FILE)
         try:
+
             if inputTextFileInfo.st_size <= 0:
                 inputFile = open(self.DRAGON_DEVICE_INPUT_TEXT_FILE, 'w')
+
                 while not self.eventQueue.empty():
-                    inputFile.write(self.eventQueue.get())
+                    eventToAdd = self.eventQueue.get()
+                    #print eventToAdd
+                    inputFile.write(eventToAdd + '\n')
 
                 for key, playerStation in self.deviceDictionary.items():
                     if playerStation != None and playerStation.joystickDevice != None:
-                        inputFile.write(playerStation.joystickDevice.get_joystick_axes())
+                        inputFile.write(playerStation.joystickDevice.get_joystick_axes() + '\n')
                 inputFile.close()
                 
         except:

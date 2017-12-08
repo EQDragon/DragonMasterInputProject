@@ -547,9 +547,9 @@ class DBV400(SerialDevice):
 
     def on_bill_inserted(self, dollarValue):
         drax = self.deviceManager.get_draxboard_from_parent_key(self.parentPath)
-        drax.increment_meter(amountToIncrement=dollarValue * 100, isInMeter=True)
+        #drax.increment_meter(amountToIncrement=dollarValue * 100, isInMeter=True)
 
-        self.deviceManager.add_event_to_queue("DBV|" + str(dollarValue) + "|" + self.parentPath)
+        self.deviceManager.add_event_to_queue("DBV|" + str(int(dollarValue)) + "|" + self.parentPath)
         return
 
 
